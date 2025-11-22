@@ -1,0 +1,10 @@
+gateway.db
+__pycache__
+.env
+.env.example
+node_modules
+tmp
+logs
+venv
+.venv
+package-lock.json
