@@ -69,7 +69,20 @@ Fill in parameters via form, execute scripts in real-time and view output result
 - Docker
 - Docker Compose
 
-### Deployment Steps
+### Method 1: Use Pre-built Image (Recommended)
+
+```bash
+# 1. Download docker-compose.yml
+wget https://raw.githubusercontent.com/dyyz1993/script-gateway/main/docker-compose.yml
+
+# 2. Modify docker-compose.yml
+# Replace "build: ." with "image: ghcr.io/dyyz1993/script-gateway:latest"
+
+# 3. Start the service
+docker-compose up -d
+```
+
+### Method 2: Build from Source
 
 #### 1. Clone the Project
 
@@ -82,6 +95,18 @@ cd script-gateway
 
 ```bash
 docker-compose up -d
+```
+
+### Method 3: Run Docker Image Directly
+
+```bash
+docker run -d \
+  --name script-gateway \
+  -p 8001:8001 \
+  -v $(pwd)/scripts_repo:/app/scripts_repo \
+  -v $(pwd)/logs:/app/logs \
+  -v $(pwd)/gateway.db:/app/gateway.db \
+  ghcr.io/dyyz1993/script-gateway:latest
 ```
 
 #### 3. Access Management Interface

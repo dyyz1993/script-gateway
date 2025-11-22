@@ -69,7 +69,20 @@ ScriptGateway（脚本网关）是一个轻量级的脚本托管与 API 网关�
 - Docker
 - Docker Compose
 
-### 部署步骤
+### 方式一：使用预构建镜像（推荐）
+
+```bash
+# 1. 下载 docker-compose.yml
+wget https://raw.githubusercontent.com/dyyz1993/script-gateway/main/docker-compose.yml
+
+# 2. 修改 docker-compose.yml 中的镜像地址
+# 将 "build: ." 替换为 "image: ghcr.io/dyyz1993/script-gateway:latest"
+
+# 3. 启动服务
+docker-compose up -d
+```
+
+### 方式二：从源码构建
 
 #### 1. 克隆项目
 
@@ -82,6 +95,18 @@ cd script-gateway
 
 ```bash
 docker-compose up -d
+```
+
+### 方式三：直接运行 Docker 镜像
+
+```bash
+docker run -d \
+  --name script-gateway \
+  -p 8001:8001 \
+  -v $(pwd)/scripts_repo:/app/scripts_repo \
+  -v $(pwd)/logs:/app/logs \
+  -v $(pwd)/gateway.db:/app/gateway.db \
+  ghcr.io/dyyz1993/script-gateway:latest
 ```
 
 #### 3. 访问管理界面
