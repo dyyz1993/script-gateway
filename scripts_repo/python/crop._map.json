@@ -1,0 +1,1 @@
+{"image": {"flag": "--image", "type": "file", "required": true, "help": "图片路径"}, "size": {"flag": "--size", "type": "str", "required": true, "help": "输出尺寸，如 100x100"}}

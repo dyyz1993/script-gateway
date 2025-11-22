@@ -1,0 +1,11 @@
+{
+  "name": "scriptgateway-js-scripts",
+  "version": "1.0.0",
+  "description": "JavaScript scripts for ScriptGateway",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.13.2",
+    "puppeteer-core": "^24.31.0",
+    "uuid": "^9.0.1"
+  }
+}

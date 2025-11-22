@@ -1,0 +1,1 @@
+{"data": {"flag": "--data", "type": "str", "required": true, "help": "CSV数据或文件路径"}, "operation": {"flag": "--operation", "type": "str", "required": false, "help": "操作类型(sum/mean/count)", "default": "sum"}}

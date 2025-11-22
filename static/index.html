@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScriptGateway 管理页</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; }
+        .tab { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; }
+        .tab.active { color: #1890ff; border-bottom-color: #1890ff; }
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .toolbar input { padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px; flex: 1; }
+        button { padding: 8px 16px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #f0f0f0; }
+        .btn.success { background: #52c41a; color: white; border-color: #52c41a; }
+        .btn.success:hover { background: #73d13d; }
+        .btn-primary { background: #1890ff; color: white; border-color: #1890ff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-success { background: #52c41a; color: white; border-color: #52c41a; }
+        .btn-success:hover { background: #73d13d; }
+        .btn-info { background: #13c2c2; color: white; border-color: #13c2c2; }
+        .btn-info:hover { background: #36cfc9; }
+        .btn-secondary { background: #8c8c8c; color: white; border-color: #8c8c8c; }
+        .btn-secondary:hover { background: #a6a6a6; }
+        .btn-danger { background: #ff4d4f; color: white; border-color: #ff4d4f; }
+        .btn-danger:hover { background: #ff7875; }
+        .danger { background: #ff4d4f; color: white; border-color: #ff4d4f; }
+        .danger:hover { background: #ff7875; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 600; }
+        tr:hover { background: #fafafa; }
+        .status-success { color: #52c41a; }
+        .status-fail { color: #ff4d4f; }
+        .status-pending { color: #faad14; }
+        .error-toggle { cursor: pointer; color: #ff4d4f; text-decoration: underline; font-size: 12px; }
+        .error-content { 
+            display: none; 
+            margin-top: 8px; 
+            padding: 10px; 
+            background: #fff1f0; 
+            border-left: 3px solid #ff4d4f; 
+            border-radius: 4px;
+            max-height: 200px;
+            overflow: auto;
+        }
+        .error-content.show { display: block; }
+        .json-viewer { 
+            font-family: monospace; 
+            font-size: 12px; 
+            white-space: pre-wrap; 
+            word-break: break-all;
+            overflow-x: auto;
+        }
+        .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: #fff; border-radius: 4px; }
+        .pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; border-radius: 4px; }
+        .pagination button:hover { background: #f0f0f0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 8px; min-width: 500px; max-width: 80%; max-height: 80%; overflow: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { cursor: pointer; font-size: 24px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px; }
+        .form-group textarea { min-height: 100px; font-family: monospace; }
+        .help-text { font-size: 12px; color: #8c8c8c; margin-top: 4px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #1890ff; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .editable-cell { cursor: pointer; }
+        .editable-cell:hover { background: #f0f8ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ScriptGateway 管理页</h1>
+        
+        <div style="margin-bottom: 15px;">
+            <button class="btn success" onclick="window.open('/scripts-swagger.html', '_blank')">📚 查看脚本API文档 (Swagger)</button>
+            <button class="btn" onclick="window.open('/docs', '_blank')" style="margin-left: 10px;">🔧 系统API文档</button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-type="python">Python 脚本</button>
+            <button class="tab" data-type="js">JavaScript 脚本</button>
+            <button class="tab" onclick="window.location.href='/deps.html'">依赖管理</button>
+            <button class="tab" onclick="window.location.href='/templates.html'">模板管理</button>
+            <button class="tab" onclick="window.location.href='/settings.html'">系统设置</button>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="search" placeholder="搜索文件名/备注...">
+            <button onclick="loadScripts()">搜索</button>
+            <button class="btn success" onclick="openCreateModal()">新建脚本</button>
+            <button class="danger" onclick="batchDelete()" id="batchDelBtn" disabled>批量删除</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll"></th>
+                    <th>文件名</th>
+                    <th>备注</th>
+                    <th>创建日期</th>
+                    <th>更新日期</th>
+                    <th>加载状态</th>
+                    <th>调用次数</th>
+                    <th>上次执行</th>
+                    <th>通知</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="scriptList"></tbody>
+        </table>
+
+        <div class="pagination">
+            <div>共 <span id="total">0</span> 条</div>
+            <div>
+                <button onclick="prevPage()">上一页</button>
+                <span>第 <span id="currentPage">1</span>/<span id="totalPages">1</span> 页</span>
+                <button onclick="nextPage()">下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Modal -->
+    <div id="debugModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>调试脚本</h3>
+                <span class="modal-close" onclick="closeDebugModal()">&times;</span>
+            </div>
+            <div id="debugForm"></div>
+            <button class="btn" id="runDebugBtn" onclick="runDebug()">执行</button>
+            <div id="debugResult" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- 新建脚本 Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>新建脚本</h3>
+                <span class="modal-close" onclick="closeCreateModal()">&times;</span>
+            </div>
+            <div class="tabs" style="margin-bottom: 10px;">
+                <button class="tab active" id="tabUpload" onclick="switchCreateTab('upload')">拖拽/上传</button>
+                <button class="tab" id="tabPaste" onclick="switchCreateTab('paste')">粘贴内容</button>
+            </div>
+            <div id="createUploadPane">
+                <div class="form-group">
+                    <label>选择文件</label>
+                    <div id="dropZone" style="border: 2px dashed #d9d9d9; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; background: #fafafa; transition: all 0.3s;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+                        <div style="font-size: 16px; color: #666; margin-bottom: 5px;">拖拽文件到此处</div>
+                        <div style="font-size: 14px; color: #999;">或点击选择文件</div>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                    </div>
+                    <div id="selectedFiles" style="margin-top: 10px; font-size: 13px; color: #666;"></div>
+                    <div class="help-text">支持多文件上传，文件将根据扩展名自动识别类型</div>
+                </div>
+                <div class="form-group">
+                    <button class="btn success" onclick="submitUpload()">上传并创建</button>
+                </div>
+            </div>
+            <div id="createPastePane" style="display: none;">
+                <div class="form-group">
+                    <label>运行时</label>
+                    <select id="pasteRuntime">
+                        <option value="python">Python</option>
+                        <option value="js">JavaScript</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>文件名</label>
+                    <input type="text" id="pasteFilename" placeholder="如 hello.py 或 hello.js">
+                </div>
+                <div class="form-group">
+                    <label>备注（可选）</label>
+                    <input type="text" id="pasteAlias" placeholder="备注名称">
+                </div>
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea id="pasteContent" style="min-height: 180px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <button class="btn success" onclick="submitPaste()">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Modal -->
+    <div id="logsModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>脚本日志</h3>
+                <span class="modal-close" onclick="closeLogsModal()">&times;</span>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <button class="btn" onclick="refreshLogs()">刷新</button>
+                <button class="btn success" onclick="copyLogs()">复制日志</button>
+                <button class="btn success" onclick="downloadLogs()">下载日志</button>
+            </div>
+            <div id="logsContent" style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">
+                <pre id="logsText" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
+            </div>
+            <div id="logsFiles" style="margin-top: 15px;">
+                <h4>历史日志文件</h4>
+                <ul id="logsFilesList" style="list-style: none; padding: 0;"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑脚本 Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>编辑脚本</h3>
+                <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>文件名</label>
+                <input type="text" id="editFilename" readonly style="background: #f5f5f5;">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="editAlias" placeholder="备注名称">
+            </div>
+            <div class="form-group">
+                <label>内容</label>
+                <textarea id="editContent" style="min-height: 400px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 13px;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-success" onclick="saveEdit()">保存</button>
+                <button class="btn" onclick="closeEditModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentType = 'python';
+        let currentPage = 1;
+        let pageSize = 20;
+        let currentScriptId = null;
+        let runningScripts = new Set();
+        let isExecuting = false;
+        let searchTimer = null;
+        let debugStartTime = null;
+        let debugTimerInterval = null;
+
+        // 搜索防抖
+        document.getElementById('search').addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentPage = 1;
+                loadScripts();
+            }, 300);
+        });
+
+        // 定时更新运行状态
+        setInterval(async () => {
+            const res = await fetch('/api/scripts/running');
+            const data = await res.json();
+            runningScripts = new Set(data.running);
+            updateRunningButtons();
+        }, 2000);
+
+        document.querySelectorAll('.tab[data-type]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab[data-type]').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentType = tab.dataset.type;
+                currentPage = 1;
+                loadScripts();
+            });
+        });
+
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            document.querySelectorAll('.row-select').forEach(cb => cb.checked = e.target.checked);
+            updateBatchBtn();
+        });
+
+        function formatDuration(ms) {
+            if (ms === null || ms === undefined) return '';
+            const n = Number(ms);
+            if (isNaN(n)) return '';
+            if (n < 1000) return n + 'ms';
+            const s = (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1);
+            return s + 's';
+        }
+
+        function updateBatchBtn() {
+            const selected = document.querySelectorAll('.row-select:checked').length;
+            document.getElementById('batchDelBtn').disabled = selected === 0;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        async function loadScripts() {
+            const search = document.getElementById('search').value;
+            const url = `/api/scripts?type=${currentType}&search=${search}&page=${currentPage}&page_size=${pageSize}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            const tbody = document.getElementById('scriptList');
+            tbody.innerHTML = '';
+            
+            data.items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const isRunning = runningScripts.has(item.id);
+                const errorId = `error-${item.id}-${index}`;
+                
+                const loadStatus = item.status_load === 1 ? 
+                    '<span class="status-success">成功</span>' : 
+                    (item.status_load === 2 ? 
+                        `<span class="status-fail">失败</span><br><span class="error-toggle" onclick="toggleError('${errorId}')">查看错误详情</span><div id="${errorId}" class="error-content"><div class="json-viewer">${escapeHtml(item.load_error_msg || '')}</div></div>` : 
+                        '<span class="status-pending">待加载</span>');
+                
+                const lastRunDisplay = isRunning ? 
+                    '<span class="status-pending">运行中...</span>' : 
+                    (item.status_last_run === 0 ? '未执行' : 
+                     item.status_last_run === 1 ? '成功' : '失败');
+                
+                const durationText = (!isRunning && item.last_duration_ms) ? 
+                    ` (${formatDuration(item.last_duration_ms)})` : '';
+                
+                // 格式化上次执行时间：显示日期 + 时间
+                const lastRunTime = item.last_run_at ? 
+                    new Date(item.last_run_at).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }) : '';
+                
+                // 调用次数
+                const runCount = item.run_count || 0;
+                
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="row-select" value="${item.id}" onchange="updateBatchBtn()"></td>
+                    <td>${item.filename}</td>
+                    <td class="editable-cell" data-script-id="${item.id}" ondblclick="editAlias(${item.id}, this)">${item.alias_name || '-'}</td>
+                    <td>${item.created_at ? new Date(item.created_at).toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit'}) : '-'}</td>
+                    <td>${item.updated_at ? new Date(item.updated_at).toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit'}) : '-'}</td>
+                    <td>${loadStatus}</td>
+                    <td><span style="color: #1890ff; font-weight: bold;">${runCount}</span></td>
+                    <td class="${item.status_last_run === 1 ? 'status-success' : item.status_last_run === 2 ? 'status-fail' : 'status-pending'}" title="${lastRunTime}">
+                        ${lastRunDisplay}${durationText}
+                        ${lastRunTime ? `<br><small style="color: #666;">${lastRunTime}</small>` : ''}
+                    </td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" ${item.notify_enabled == 1 ? 'checked' : ''} onchange="toggleNotify(${item.id}, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <button class="btn-primary" onclick="copyCurl(${item.id})">复制cURL</button>
+                        <button class="btn-success" onclick="openDebugModal(${item.id})">调试</button>
+                        <button class="btn-info" onclick="editScript(${item.id})">编辑</button>
+                        <button class="btn-secondary" onclick="viewLogs(${item.id})">日志</button>
+                        ${isRunning ? 
+                            `<button class="btn-danger" id="terminate-${item.id}" onclick="terminateScript(${item.id})">中止</button>` : 
+                            ''}
+                        <button class="btn-danger" onclick="deleteScript(${item.id})">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('total').textContent = data.total;
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = Math.max(1, Math.ceil(data.total / pageSize));
+        }
+
+        function updateRunningButtons() {
+            runningScripts.forEach(id => {
+                const btn = document.getElementById(`terminate-${id}`);
+                if (!btn && document.querySelector(`.row-select[value="${id}"]`)) {
+                    location.reload();
+                }
+            });
+        }
+
+        function toggleError(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('show');
+        }
+
+        async function toggleNotify(id, enabled) {
+            const res = await fetch(`/api/scripts/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notify_enabled: enabled ? 1 : 0 })
+            });
+            if (!res.ok) alert('设置失败');
+        }
+
+        // 双击编辑备注
+        let editingCell = null;
+        function editAlias(scriptId, cell) {
+            if (editingCell) return; // 防止多个单元格同时编辑
+            
+            editingCell = cell;
+            const currentValue = cell.textContent === '-' ? '' : cell.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.style.width = '100%';
+            input.style.padding = '4px';
+            input.style.border = '1px solid #1890ff';
+            input.style.borderRadius = '4px';
+            
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+            
+            async function saveAlias() {
+                const newValue = input.value.trim();
+                editingCell = null;
+                
+                if (newValue !== currentValue) {
+                    const res = await fetch(`/api/scripts/${scriptId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ alias: newValue || null })
+                    });
+                    
+                    if (res.ok) {
+                        cell.textContent = newValue || '-';
+                    } else {
+                        alert('保存失败');
+                        cell.textContent = currentValue || '-';
+                    }
+                } else {
+                    cell.textContent = currentValue || '-';
+                }
+            }
+            
+            function cancelEdit() {
+                editingCell = null;
+                cell.textContent = currentValue || '-';
+            }
+            
+            input.addEventListener('blur', saveAlias);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            });
+        }
+
+        async function copyCurl(id) {
+            const res = await fetch(`/api/scripts/${id}`);
+            const script = await res.json();
+            const curl = `curl -X POST http://localhost:8000/api/scripts/${id}/run -H "Content-Type: application/json" -d '{}'`;
+            await navigator.clipboard.writeText(curl);
+            alert('cURL已复制到剪贴板！');
+        }
+
+        async function openDebugModal(id) {
+            currentScriptId = id;
+            const form = document.getElementById('debugForm');
+            form.innerHTML = '';
+            const resultDiv = document.getElementById('debugResult');
+            if (resultDiv) { resultDiv.innerHTML = ''; }
+            const btn = document.getElementById('runDebugBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '执行';
+            }
+            isExecuting = false;
+            
+            const res = await fetch(`/api/scripts/${id}`);
+            const script = await res.json();
+            
+            // 检查加载状态
+            if (script.status_load === 0) {
+                form.innerHTML = `
+                    <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+                        <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ 脚本待加载</h4>
+                        <p style="margin: 0; color: #856404;">该脚本尚未被扫描器加载，请稍后再试。</p>
+                    </div>
+                `;
+                document.getElementById('debugModal').style.display = 'block';
+                return;
+            }
+            
+            if (script.status_load === 2) {
+                const errorMsg = script.load_error_msg || '未知错误';
+                form.innerHTML = `
+                    <div style="padding: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">
+                        <h4 style="margin: 0 0 10px 0; color: #721c24;">❌ 脚本加载失败</h4>
+                        <p style="margin: 0 0 10px 0; color: #721c24;">该脚本在加载时出现错误，无法进行调试。</p>
+                        <details style="margin-top: 10px;">
+                            <summary style="cursor: pointer; color: #721c24; font-weight: bold;">查看错误详情</summary>
+                            <pre style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto; font-size: 12px;">${escapeHtml(errorMsg)}</pre>
+                        </details>
+                    </div>
+                `;
+                document.getElementById('debugModal').style.display = 'block';
+                return;
+            }
+            
+            // status_load === 1，加载成功
+            const argsSchema = JSON.parse(script.args_schema || '{}');
+            
+            if (Object.keys(argsSchema).length === 0) {
+                form.innerHTML = `
+                    <div style="padding: 20px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;">
+                        <h4 style="margin: 0 0 10px 0; color: #0c5460;">ℹ️ 无参数脚本</h4>
+                        <p style="margin: 0; color: #0c5460;">该脚本不需要任何参数，直接点击执行即可。</p>
+                    </div>
+                `;
+            } else {
+                for (const [key, meta] of Object.entries(argsSchema)) {
+                    const div = document.createElement('div');
+                    div.className = 'form-group';
+                    div.innerHTML = `
+                        <label>${meta.help || key}${meta.required ? ' *' : ''}</label>
+                        ${meta.type === 'file' ? 
+                            `<input type="file" id="debug_${key}" ${meta.required ? 'required' : ''}>` : 
+                            `<input type="text" id="debug_${key}" placeholder="${meta.help || key}" ${meta.required ? 'required' : ''}>`}
+                    `;
+                    form.appendChild(div);
+                }
+            }
+            
+            document.getElementById('debugModal').style.display = 'block';
+        }
+
+        function closeDebugModal() {
+            document.getElementById('debugModal').style.display = 'none';
+        }
+
+        async function runDebug() {
+            if (isExecuting) return;
+            isExecuting = true;
+            const btn = document.getElementById('runDebugBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '执行中...';
+            }
+            
+            // 开始计时
+            debugStartTime = Date.now();
+            const timerDisplay = document.createElement('div');
+            timerDisplay.id = 'debugTimer';
+            timerDisplay.style.cssText = 'margin-top: 10px; font-size: 14px; color: #666; font-family: monospace;';
+            timerDisplay.textContent = '执行时间: 00:00:00';
+            document.getElementById('debugResult').innerHTML = '<p>执行中...</p>';
+            document.getElementById('debugResult').appendChild(timerDisplay);
+            
+            debugTimerInterval = setInterval(() => {
+                const elapsed = Date.now() - debugStartTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const displayTime = `${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+                if (document.getElementById('debugTimer')) {
+                    document.getElementById('debugTimer').textContent = `执行时间: ${displayTime}`;
+                }
+            }, 100);
+            
+            const res = await fetch(`/api/scripts/${currentScriptId}`);
+            const script = await res.json();
+            const argsSchema = JSON.parse(script.args_schema || '{}');
+            
+            const formData = new FormData();
+            let hasFile = false;
+            
+            for (const key of Object.keys(argsSchema)) {
+                const input = document.getElementById(`debug_${key}`);
+                if (!input) continue;
+                if (input.type === 'file' && input.files.length > 0) {
+                    formData.append(key, input.files[0]);
+                    hasFile = true;
+                } else if (input.value) {
+                    formData.append(key, input.value);
+                }
+            }
+            
+            try {
+                const runRes = await fetch(`/api/scripts/${currentScriptId}/run`, {
+                    method: 'POST',
+                    body: hasFile ? formData : JSON.stringify(Object.fromEntries(formData)),
+                    headers: hasFile ? {} : { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await runRes.json();
+                
+                // 停止计时
+                clearInterval(debugTimerInterval);
+                const totalTime = ((Date.now() - debugStartTime) / 1000).toFixed(2);
+                
+                // 结果高亮显示
+                let resultHtml = `<div style="margin-bottom: 10px; padding: 8px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724;">
+                    ✅ 执行完成，耗时: ${totalTime}s
+                </div>`;
+                resultHtml += `<pre style="background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; max-height: 400px;">${JSON.stringify(result, null, 2)}</pre>`;
+                resultHtml += `<button class="btn-primary" style="margin-top: 10px;" onclick="copyDebugResult()">复制结果</button>`;
+                
+                document.getElementById('debugResult').innerHTML = resultHtml;
+            } catch (err) {
+                clearInterval(debugTimerInterval);
+                const totalTime = ((Date.now() - debugStartTime) / 1000).toFixed(2);
+                document.getElementById('debugResult').innerHTML = `
+                    <div style="margin-bottom: 10px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;">
+                        ❌ 执行失败，耗时: ${totalTime}s
+                    </div>
+                    <p style="color: red;">Error: ${err.message}</p>
+                `;
+            } finally {
+                isExecuting = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '执行';
+                }
+            }
+        }
+        
+        function copyDebugResult() {
+            const pre = document.querySelector('#debugResult pre');
+            if (pre) {
+                navigator.clipboard.writeText(pre.textContent);
+                alert('结果已复制到剪贴板！');
+            }
+        }
+
+        async function deleteScript(id) {
+            if (!confirm('确定删除？物理文件也将被删除！')) return;
+            const res = await fetch(`/api/scripts/${id}?delete_file=true`, { method: 'DELETE' });
+            if (res.ok) loadScripts();
+        }
+
+        async function batchDelete() {
+            const selected = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.value);
+            if (selected.length === 0) return;
+            if (!confirm(`确定删除 ${selected.length} 个脚本？物理文件也将被删除！`)) return;
+            
+            for (const id of selected) {
+                await fetch(`/api/scripts/${id}?delete_file=true`, { method: 'DELETE' });
+            }
+            loadScripts();
+        }
+
+        async function viewLogs(id) {
+            currentScriptId = id;
+            const res = await fetch(`/api/scripts/${id}/logs?lines=200`);
+            const data = await res.json();
+            document.getElementById('logsText').textContent = data.logs || '暂无日志';
+            
+            const filesList = document.getElementById('logsFilesList');
+            filesList.innerHTML = '';
+            (data.files || []).forEach(file => {
+                const li = document.createElement('li');
+                // file 是对象，包含 name, size, modified 字段
+                const fileName = typeof file === 'string' ? file : file.name;
+                const fileSize = file.size ? ` (${(file.size / 1024).toFixed(2)} KB)` : '';
+                const fileTime = file.modified ? ` - ${file.modified}` : '';
+                li.innerHTML = `<a href="#" onclick="viewLogFile('${fileName}'); return false;">${fileName}${fileSize}${fileTime}</a>`;
+                filesList.appendChild(li);
+            });
+            
+            document.getElementById('logsModal').style.display = 'block';
+        }
+
+        function closeLogsModal() {
+            document.getElementById('logsModal').style.display = 'none';
+        }
+
+        async function refreshLogs() {
+            if (currentScriptId) await viewLogs(currentScriptId);
+        }
+
+        async function copyLogs() {
+            const text = document.getElementById('logsText').textContent;
+            await navigator.clipboard.writeText(text);
+            alert('日志已复制！');
+        }
+
+        async function downloadLogs() {
+            const text = document.getElementById('logsText').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `script-${currentScriptId}-logs.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function viewLogFile(filename) {
+            if (!filename) return;
+            
+            try {
+                // 调用后端 API 读取日志文件
+                const res = await fetch(`/api/scripts/logs/file/${encodeURIComponent(filename)}?lines=1000`);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('logsText').textContent = data.logs || '日志为空';
+                } else {
+                    const error = await res.json();
+                    document.getElementById('logsText').textContent = `无法读取日志文件: ${error.error || '未知错误'}`;
+                }
+            } catch (err) {
+                document.getElementById('logsText').textContent = `读取失败: ${err.message}`;
+            }
+        }
+
+        async function terminateScript(id) {
+            if (!confirm('确定中止该脚本？')) return;
+            const res = await fetch(`/api/scripts/${id}/terminate`, { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('脚本已中止');
+                loadScripts();
+            } else {
+                alert('中止失败: ' + data.message);
+            }
+        }
+
+        async function editScript(id) {
+            currentScriptId = id;
+            const res = await fetch(`/api/scripts/${id}/content`);
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('editFilename').value = data.filename;
+                document.getElementById('editAlias').value = data.alias || '';
+                document.getElementById('editContent').value = data.content;
+                document.getElementById('editModal').style.display = 'block';
+            } else {
+                alert('获取脚本内容失败: ' + (data.error || data.message));
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function saveEdit() {
+            const alias = document.getElementById('editAlias').value;
+            const content = document.getElementById('editContent').value;
+            
+            if (!content.trim()) {
+                alert('脚本内容不能为空！');
+                return;
+            }
+            
+            const res = await fetch(`/api/scripts/${currentScriptId}/content`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alias, content })
+            });
+            
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('✅ 保存成功！脚本将被重新加载。');
+                closeEditModal();
+                loadScripts();
+            } else {
+                alert('保存失败: ' + (data.error || data.message));
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'block';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        function switchCreateTab(type) {
+            if (type === 'upload') {
+                document.getElementById('tabUpload').classList.add('active');
+                document.getElementById('tabPaste').classList.remove('active');
+                document.getElementById('createUploadPane').style.display = 'block';
+                document.getElementById('createPastePane').style.display = 'none';
+            } else {
+                document.getElementById('tabUpload').classList.remove('active');
+                document.getElementById('tabPaste').classList.add('active');
+                document.getElementById('createUploadPane').style.display = 'none';
+                document.getElementById('createPastePane').style.display = 'block';
+            }
+        }
+
+        async function submitPaste() {
+            const runtime = document.getElementById('pasteRuntime').value;
+            const filename = document.getElementById('pasteFilename').value.trim();
+            const alias = document.getElementById('pasteAlias').value;
+            const content = document.getElementById('pasteContent').value;
+            
+            if (!content.trim()) {
+                alert('请输入脚本内容！');
+                return;
+            }
+            
+            // 校验文件名与运行时类型是否匹配
+            if (filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                if (runtime === 'python' && ext !== 'py') {
+                    if (!confirm(`文件名后缀为 .${ext}，但运行时选择的是 Python。是否继续？`)) {
+                        return;
+                    }
+                } else if (runtime === 'js' && ext !== 'js') {
+                    if (!confirm(`文件名后缀为 .${ext}，但运行时选择的是 JavaScript。是否继续？`)) {
+                        return;
+                    }
+                }
+            }
+            
+            const res = await fetch('/api/scripts/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runtime, filename, alias, content })
+            });
+            
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert(`✅ 脚本创建成功：${data.filename}`);
+                closeCreateModal();
+                loadScripts();
+            } else {
+                alert('创建失败: ' + (data.error || data.message));
+            }
+        }
+
+        async function submitUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            
+            if (!files || files.length === 0) {
+                alert('请选择文件！');
+                return;
+            }
+            
+            const formData = new FormData();
+            
+            // 添加所有文件
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                // 校验文件类型
+                if (ext !== 'py' && ext !== 'js') {
+                    alert(`文件 ${file.name} 不是支持的类型，只支持 .py 和 .js 文件`);
+                    return;
+                }
+                
+                formData.append('files', file);
+            }
+            
+            try {
+                const res = await fetch('/api/scripts/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const count = data.created ? data.created.length : 0;
+                    alert(`✅ 成功上传 ${count} 个文件！`);
+                    closeCreateModal();
+                    // 清空文件选择
+                    fileInput.value = '';
+                    loadScripts();
+                } else {
+                    alert('上传失败: ' + (data.error || data.message));
+                }
+            } catch (err) {
+                alert('上传失败: ' + err.message);
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadScripts();
+            }
+        }
+
+        function nextPage() {
+            const total = parseInt(document.getElementById('total').textContent);
+            const totalPages = Math.ceil(total / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadScripts();
+            }
+        }
+
+        // 初始加载
+        loadScripts();
+        
+        // 拖拽上传功能
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            // 监听文件选择变化
+            fileInput.addEventListener('change', () => {
+                updateSelectedFiles();
+            });
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#1890ff';
+                dropZone.style.background = '#e6f7ff';
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = '#d9d9d9';
+                dropZone.style.background = '#fafafa';
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#d9d9d9';
+                dropZone.style.background = '#fafafa';
+                fileInput.files = e.dataTransfer.files;
+                updateSelectedFiles();
+            });
+        }
+        
+        function updateSelectedFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const selectedFilesDiv = document.getElementById('selectedFiles');
+            if (!fileInput || !selectedFilesDiv) return;
+            
+            const files = fileInput.files;
+            if (files.length === 0) {
+                selectedFilesDiv.innerHTML = '';
+            } else {
+                const fileNames = Array.from(files).map(f => f.name).join(', ');
+                selectedFilesDiv.innerHTML = `已选择 ${files.length} 个文件: ${fileNames}`;
+            }
+        }
+    </script>
+</body>
+</html>

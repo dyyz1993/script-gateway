@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模板管理 - ScriptGateway</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 24px; margin-bottom: 10px; }
+        .header-btn { padding: 8px 16px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .header-btn:hover { background: #40a9ff; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 14px; }
+        .tab.active { background: #1890ff; color: white; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .editor-container { margin-top: 15px; }
+        textarea { width: 100%; height: 400px; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; padding: 12px; border: 1px solid #d9d9d9; border-radius: 4px; resize: vertical; }
+        .btn-group { margin-top: 15px; display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn.primary { background: #1890ff; color: white; }
+        .btn.primary:hover { background: #40a9ff; }
+        .btn.success { background: #52c41a; color: white; }
+        .btn.success:hover { background: #73d13d; }
+        .btn.warning { background: #faad14; color: white; }
+        .btn.warning:hover { background: #ffc53d; }
+        .help-text { font-size: 12px; color: #8c8c8c; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📝 模板管理</h1>
+        <a href="/" class="header-btn">返回首页</a>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-type="python" onclick="switchTab('python')">Python 模板</button>
+        <button class="tab" data-type="js" onclick="switchTab('js')">JavaScript 模板</button>
+    </div>
+
+    <div class="card">
+        <h3 id="templateTitle">Python 脚本模板</h3>
+        <div class="help-text">修改后点击"保存"生效，新建脚本时将使用此模板。</div>
+        
+        <div class="editor-container">
+            <textarea id="templateEditor" placeholder="加载中..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn primary" onclick="saveTemplate()">💾 保存模板</button>
+            <button class="btn success" onclick="downloadTemplate()">📥 下载模板</button>
+            <button class="btn warning" onclick="resetTemplate()">🔄 重置为默认</button>
+        </div>
+    </div>
+
+    <script>
+        let currentType = 'python';
+
+        async function switchTab(type) {
+            currentType = type;
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.type === type);
+            });
+            document.getElementById('templateTitle').textContent = 
+                type === 'python' ? 'Python 脚本模板' : 'JavaScript 脚本模板';
+            await loadTemplate();
+        }
+
+        async function loadTemplate() {
+            try {
+                const res = await fetch(`/api/templates/${currentType}`);
+                const data = await res.json();
+                document.getElementById('templateEditor').value = data.content || '';
+            } catch (err) {
+                alert('加载模板失败: ' + err.message);
+            }
+        }
+
+        async function saveTemplate() {
+            const content = document.getElementById('templateEditor').value;
+            if (!content.trim()) {
+                alert('模板内容不能为空！');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/templates/${currentType}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                if (res.ok) {
+                    alert('✅ 模板保存成功！');
+                } else {
+                    const data = await res.json();
+                    alert('保存失败: ' + (data.error || res.statusText));
+                }
+            } catch (err) {
+                alert('保存失败: ' + err.message);
+            }
+        }
+
+        async function resetTemplate() {
+            if (!confirm('确定重置为默认模板？当前修改将丢失！')) return;
+            try {
+                const res = await fetch(`/api/templates/${currentType}/reset`, { method: 'POST' });
+                if (res.ok) {
+                    alert('✅ 模板已重置为默认！');
+                    await loadTemplate();
+                } else {
+                    const data = await res.json();
+                    alert('重置失败: ' + (data.error || res.statusText));
+                }
+            } catch (err) {
+                alert('重置失败: ' + err.message);
+            }
+        }
+
+        async function downloadTemplate() {
+            const content = document.getElementById('templateEditor').value;
+            const ext = currentType === 'python' ? 'py' : 'js';
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template.${ext}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 初始加载
+        loadTemplate();
+    </script>
+</body>
+</html>

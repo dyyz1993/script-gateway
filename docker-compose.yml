@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  script-gateway:
+    build: .
+    container_name: script-gateway
+    ports:
+      - "8001:8001"
+    volumes:
+      # 脚本目录映射（可在容器外修改）
+      - ./scripts_repo/python:/app/scripts_repo/python
+      - ./scripts_repo/js:/app/scripts_repo/js
+      # 依赖配置文件（重要：动态安装的依赖会保存到这些文件）
+      - ./requirements.txt:/app/requirements.txt
+      - ./package.json:/app/package.json
+      # 数据库文件（持久化）
+      - ./gateway.db:/app/gateway.db
+      # 日志目录
+      - ./logs:/app/logs
+      # 临时文件目录
+      # - ./tmp:/app/tmp
+      # 静态文件（可选，方便修改前端）
+      # - ./static:/app/static
+      # 模板目录（可选）
+      # - ./templates:/app/templates
+    environment:
+      - TZ=Asia/Shanghai
+      # 系统设置参数（可在部署时配置默认值）
+      - SCAN_INTERVAL_SEC=5              # 脚本扫描间隔（秒）
+      - TIMEOUT_MIN=10                    # 脚本执行超时时间（分钟）
+      - NOTIFY_URL=                       # 通知 Webhook URL（可选）
+      # - BASE_URL=http://your-domain.com # 自定义域名前缀（可选）
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

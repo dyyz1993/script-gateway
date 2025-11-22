@@ -1,0 +1,38 @@
+# Docker 相关文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+tmp/
+*.log
+
+# 数据库（如果不想打包进镜像）
+# data/
+# *.db
+
+# macOS
+.DS_Store
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/

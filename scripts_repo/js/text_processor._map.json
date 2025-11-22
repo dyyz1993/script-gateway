@@ -1,0 +1,1 @@
+{"text": {"flag": "--text", "type": "str", "required": true, "help": "要处理的文本"}, "action": {"flag": "--action", "type": "str", "required": false, "help": "操作类型(upper/lower/reverse/count)", "default": "upper"}}

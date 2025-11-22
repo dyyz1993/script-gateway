@@ -1,0 +1,1 @@
+{"count": {"flag": "--count", "type": "str", "required": false, "help": "生成UUID的数量", "default": "1"}, "version": {"flag": "--version", "type": "str", "required": false, "help": "UUID版本(v4/v1)", "default": "v4"}}

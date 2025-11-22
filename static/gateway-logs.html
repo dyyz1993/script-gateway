@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网关日志 - ScriptGateway</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        .back-btn { padding: 8px 16px; background: #1890ff; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-bottom: 20px; text-decoration: none; display: inline-block; }
+        .back-btn:hover { background: #40a9ff; }
+        .filter-bar { background: #fff; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .filter-bar label { display: inline-block; margin-right: 10px; font-weight: 600; }
+        .filter-bar input, .filter-bar select { padding: 6px; border: 1px solid #d9d9d9; border-radius: 4px; margin-right: 15px; }
+        .filter-bar button { padding: 6px 16px; background: #1890ff; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .filter-bar button:hover { background: #40a9ff; }
+        .filter-bar button.secondary { background: #52c41a; }
+        table { width: 100%; background: #fff; border-radius: 4px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 600; }
+        .status-200 { color: #52c41a; }
+        .status-400 { color: #faad14; }
+        .status-500 { color: #ff4d4f; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 400px; }
+        .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: #fff; border-radius: 4px; }
+        .pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; border-radius: 4px; }
+        .pagination button:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>网关日志</h1>
+        <a href="/" class="back-btn">← 返回主页</a>
+        
+        <div class="filter-bar">
+            <label>时间范围</label>
+            <input type="date" id="startDate">
+            <label>至</label>
+            <input type="date" id="endDate">
+            
+            <label>状态码</label>
+            <select id="statusFilter">
+                <option value="">全部</option>
+                <option value="2">2xx</option>
+                <option value="4">4xx</option>
+                <option value="5">5xx</option>
+            </select>
+            
+            <button onclick="filterLogs()">筛选</button>
+            <button class="secondary" onclick="downloadLogs()">下载日志</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>时间</th>
+                    <th>方法</th>
+                    <th>路径</th>
+                    <th>状态码</th>
+                    <th>耗时</th>
+                </tr>
+            </thead>
+            <tbody id="logList"></tbody>
+        </table>
+
+        <div class="pagination">
+            <div>共 <span id="total">0</span> 条</div>
+            <div>
+                <button onclick="prevPage()">上一页</button>
+                <span>第 <span id="currentPage">1</span> 页</span>
+                <button onclick="nextPage()">下一页</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let pageSize = 50;
+        let logContent = [];
+
+        async function loadLogs() {
+            const res = await fetch('/api/logs/gateway');
+            const data = await res.json();
+            logContent = data.logs || '';
+            parseLogs();
+        }
+
+        function parseLogs() {
+            const lines = logContent.split('\n').filter(l => l.trim());
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = lines.map(line => {
+                const match = line.match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*?(GET|POST|PUT|PATCH|DELETE)\s+(\S+)\s+(\d{3})\s+(\d+)ms/);
+                if (!match) return null;
+                return {
+                    time: match[1],
+                    method: match[2],
+                    path: match[3],
+                    status: match[4],
+                    duration: match[5]
+                };
+            }).filter(Boolean);
+
+            if (startDate) filtered = filtered.filter(l => l.time >= startDate);
+            if (endDate) filtered = filtered.filter(l => l.time <= endDate + ' 23:59:59');
+            if (statusFilter) filtered = filtered.filter(l => l.status.startsWith(statusFilter));
+
+            const total = filtered.length;
+            const start = (currentPage - 1) * pageSize;
+            const paged = filtered.slice(start, start + pageSize);
+
+            const tbody = document.getElementById('logList');
+            tbody.innerHTML = '';
+            paged.forEach(log => {
+                const tr = document.createElement('tr');
+                const statusClass = log.status.startsWith('2') ? 'status-200' : log.status.startsWith('4') ? 'status-400' : 'status-500';
+                tr.innerHTML = `
+                    <td>${log.time}</td>
+                    <td>${log.method}</td>
+                    <td>${log.path}</td>
+                    <td class="${statusClass}">${log.status}</td>
+                    <td>${log.duration}ms</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total').textContent = total;
+            document.getElementById('currentPage').textContent = currentPage;
+        }
+
+        function filterLogs() {
+            currentPage = 1;
+            parseLogs();
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                parseLogs();
+            }
+        }
+
+        function nextPage() {
+            currentPage++;
+            parseLogs();
+        }
+
+        async function downloadLogs() {
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gateway_log_' + new Date().toISOString().slice(0, 10) + '.log';
+            a.click();
+        }
+
+        loadLogs();
+    </script>
+</body>
+</html>

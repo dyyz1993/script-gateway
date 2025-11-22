@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>依赖管理 - ScriptGateway</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        .back-btn { padding: 8px 16px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-bottom: 20px; }
+        .back-btn:hover { background: #40a9ff; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; border: none; background: #fff; cursor: pointer; border-radius: 4px; }
+        .tab.active { background: #1890ff; color: #fff; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .card h3 { margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group textarea { width: 100%; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; min-height: 120px; font-family: monospace; }
+        .btn { padding: 8px 16px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn:hover { background: #40a9ff; }
+        .btn.success { background: #52c41a; }
+        .btn.success:hover { background: #73d13d; }
+        .deps-list { list-style: none; }
+        .deps-list li { padding: 10px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .deps-list .conflict { background: #fff1f0; border-left: 3px solid #ff4d4f; }
+        .deps-list .conflict-badge { background: #ff4d4f; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .deps-list .status-installed { color: #52c41a; font-size: 12px; }
+        .deps-list .status-missing { color: #ff4d4f; font-size: 12px; }
+        .log-box { background: #000; color: #0f0; padding: 15px; border-radius: 4px; min-height: 200px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; }
+        table { width: 100%; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 600; }
+        .status-success { color: #52c41a; }
+        .status-fail { color: #ff4d4f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>依赖管理</h1>
+        <button class="back-btn" onclick="window.location.href='/'">← 返回脚本列表</button>
+
+        <div class="tabs">
+            <button class="tab active" data-runtime="python">Python 依赖</button>
+            <button class="tab" data-runtime="js">JavaScript 依赖</button>
+        </div>
+
+        <div class="card">
+            <h3>已安装依赖</h3>
+            <button class="btn" onclick="loadDeps()">刷新列表</button>
+            <button class="btn success" onclick="installAllFromFile()" style="margin-left: 10px;">一键安装（从配置文件）</button>
+            <table id="depsTable" style="margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th>包名</th>
+                        <th>版本</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody id="depsList"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>安装依赖</h3>
+            <div class="form-group">
+                <label>粘贴 <span id="fileTypeLabel">requirements.txt</span> 内容或上传文件</label>
+                <textarea id="depsInput" placeholder="例如：&#10;requests==2.28.0&#10;fastapi>=0.100.0"></textarea>
+            </div>
+            <button class="btn" onclick="parseDeps()">解析依赖</button>
+            <button class="btn success" onclick="document.getElementById('fileInput').click()">上传文件</button>
+            <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
+        </div>
+
+        <div class="card" id="parsedCard" style="display: none;">
+            <h3>待安装依赖</h3>
+            <ul id="parsedList" class="deps-list"></ul>
+            <button class="btn success" onclick="installDeps()" style="margin-top: 15px;">安装选中依赖</button>
+        </div>
+
+        <div class="card" id="logCard" style="display: none;">
+            <h3>安装日志</h3>
+            <div id="logBox" class="log-box"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentRuntime = 'python';
+        let parsedDeps = [];
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentRuntime = tab.dataset.runtime;
+                updateFileTypeLabel();
+                loadDeps();
+            });
+        });
+
+        function updateFileTypeLabel() {
+            const label = currentRuntime === 'python' ? 'requirements.txt' : 'package.json';
+            document.getElementById('fileTypeLabel').textContent = label;
+        }
+
+        async function loadDeps() {
+            const res = await fetch(`/api/deps?runtime=${currentRuntime}`);
+            const data = await res.json();
+            
+            const tbody = document.getElementById('depsList');
+            tbody.innerHTML = '';
+            
+            // 获取配置文件中的依赖
+            const configDeps = await loadConfigDeps();
+            const installedMap = {};
+            
+            if (data.installed && data.installed.length > 0) {
+                data.installed.forEach(dep => {
+                    installedMap[dep.name.toLowerCase()] = dep.version;
+                });
+            }
+            
+            // 显示配置文件中的所有依赖，标记是否已安装
+            if (configDeps.length > 0) {
+                configDeps.forEach(dep => {
+                    const installedVer = installedMap[dep.name.toLowerCase()];
+                    const isInstalled = !!installedVer;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dep.name}</td>
+                        <td>${dep.version || 'N/A'}</td>
+                        <td>${isInstalled ? '<span class="status-installed">✔ 已安装</span>' : '<span class="status-missing">✖ 未安装</span>'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else if (data.installed && data.installed.length > 0) {
+                // 如果配置文件为空，只显示已安装的
+                data.installed.forEach(dep => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${dep.name}</td>
+                        <td>${dep.version || 'N/A'}</td>
+                        <td><span class="status-installed">✔ 已安装</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">暂无依赖</td></tr>';
+            }
+        }
+
+        async function loadConfigDeps() {
+            try {
+                const filename = currentRuntime === 'python' ? 'requirements.txt' : 'package.json';
+                const res = await fetch(`/api/deps/config-file?runtime=${currentRuntime}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return data.deps || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function installAllFromFile() {
+            if (!confirm(`确认要一键安装所有配置文件中的依赖吗？`)) {
+                return;
+            }
+            
+            const configDeps = await loadConfigDeps();
+            if (configDeps.length === 0) {
+                alert('配置文件为空，无需安装');
+                return;
+            }
+            
+            document.getElementById('logCard').style.display = 'block';
+            const logBox = document.getElementById('logBox');
+            logBox.textContent = `正在安装 ${configDeps.length} 个依赖...\n`;
+            
+            const res = await fetch('/api/deps/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runtime: currentRuntime, deps: configDeps })
+            });
+            
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                logBox.textContent += '\n安装成功！\n\n' + data.log;
+                setTimeout(() => loadDeps(), 1000);
+            } else {
+                logBox.textContent += '\n安装失败：\n' + data.log;
+            }
+        }
+
+        async function parseDeps() {
+            const input = document.getElementById('depsInput').value.trim();
+            if (!input) {
+                alert('请输入依赖内容');
+                return;
+            }
+
+            const res = await fetch('/api/deps/parse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runtime: currentRuntime, content: input })
+            });
+            
+            const data = await res.json();
+            displayParsedDeps(data);
+        }
+
+        async function uploadFile() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return;
+
+            const text = await file.text();
+            document.getElementById('depsInput').value = text;
+            parseDeps();
+        }
+
+        function displayParsedDeps(data) {
+            parsedDeps = data.requested || [];
+            const conflicts = data.conflicts || [];
+            
+            const list = document.getElementById('parsedList');
+            list.innerHTML = '';
+            
+            parsedDeps.forEach((dep, idx) => {
+                const conflict = conflicts.find(c => c.name === dep.name);
+                const li = document.createElement('li');
+                li.className = conflict ? 'conflict' : '';
+                
+                let conflictInfo = '';
+                if (conflict) {
+                    conflictInfo = `<span class="conflict-badge">冲突</span> <small style="color: #ff4d4f;">当前: ${conflict.current_version}, 待装: ${conflict.requested_version}</small>`;
+                }
+                
+                li.innerHTML = `
+                    <div>
+                        <input type="checkbox" checked data-idx="${idx}">
+                        <strong>${dep.name}</strong> ${dep.version ? `(${dep.version})` : ''}
+                        ${conflictInfo}
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+            
+            document.getElementById('parsedCard').style.display = 'block';
+        }
+
+        async function installDeps() {
+            const selected = Array.from(document.querySelectorAll('#parsedList input:checked'))
+                .map(cb => parsedDeps[parseInt(cb.dataset.idx)]);
+            
+            if (selected.length === 0) {
+                alert('请选择要安装的依赖');
+                return;
+            }
+
+            document.getElementById('logCard').style.display = 'block';
+            const logBox = document.getElementById('logBox');
+            logBox.textContent = '正在安装依赖...\n';
+
+            const res = await fetch('/api/deps/install', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ runtime: currentRuntime, deps: selected })
+            });
+
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                logBox.textContent += '\n安装成功！\n\n' + data.log;
+                setTimeout(() => loadDeps(), 1000);
+            } else {
+                logBox.textContent += '\n安装失败：\n' + data.log;
+            }
+        }
+
+        loadDeps();
+    </script>
+</body>
+</html>

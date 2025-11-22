@@ -1,0 +1,1 @@
+{"city": {"flag": "--city", "type": "str", "required": true, "help": "城市名称"}, "units": {"flag": "--units", "type": "str", "required": false, "help": "单位(metric/imperial)", "default": "metric"}}

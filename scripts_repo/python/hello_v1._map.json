@@ -1,0 +1,1 @@
+{"name": {"flag": "--name", "type": "str", "required": true, "help": "姓名"}}

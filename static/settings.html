@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - ScriptGateway</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        .back-btn { padding: 8px 16px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-bottom: 20px; }
+        .back-btn:hover { background: #40a9ff; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .card h3 { margin-bottom: 15px; border-bottom: 2px solid #1890ff; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; max-width: 400px; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
+        .form-group .help-text { font-size: 12px; color: #999; margin-top: 5px; }
+        .btn { padding: 10px 20px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn:hover { background: #40a9ff; }
+        .btn.success { background: #52c41a; }
+        .btn.success:hover { background: #73d13d; }
+        .btn.danger { background: #ff4d4f; }
+        .btn.danger:hover { background: #ff7875; }
+        .readonly { background: #f5f5f5; color: #999; }
+        .status-success { color: #52c41a; margin-left: 10px; }
+        .status-fail { color: #ff4d4f; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>系统设置</h1>
+        <button class="back-btn" onclick="window.location.href='/'">← 返回脚本列表</button>
+
+        <div class="card">
+            <h3>扫描配置</h3>
+            <div class="form-group">
+                <label>定时扫描间隔（秒）</label>
+                <input type="number" id="scanInterval" min="1" max="300" value="5">
+                <div class="help-text">范围：1-300秒，默认5秒</div>
+            </div>
+            <div class="form-group">
+                <label>脚本执行超时时间（分钟）</label>
+                <input type="number" id="timeoutMin" min="1" max="60" value="10">
+                <div class="help-text">范围：1-60分钟，默认10分钟</div>
+            </div>
+            <div class="form-group">
+                <label>Python脚本目录</label>
+                <input type="text" id="pyDir" class="readonly" readonly>
+            </div>
+            <div class="form-group">
+                <label>JavaScript脚本目录</label>
+                <input type="text" id="jsDir" class="readonly" readonly>
+            </div>
+            <div class="form-group">
+                <label>忽略模式（每行一个）</label>
+                <textarea id="ignorePatterns" rows="8" style="width: 100%; font-family: monospace; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;" placeholder="node_modules&#10;__pycache__&#10;.git&#10;.venv&#10;*.pyc&#10;.*"></textarea>
+                <div class="help-text">
+                    支持 glob 模式：<br>
+                    - <code>node_modules</code> - 忽略所有 node_modules 目录<br>
+                    - <code>*.pyc</code> - 忽略所有 .pyc 文件<br>
+                    - <code>.*</code> - 忽略所有隐藏文件/目录<br>
+                    - <code>#</code> 开头的行为注释
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>通知配置</h3>
+            <div class="form-group">
+                <label>Bark通知URL</label>
+                <input type="text" id="notifyUrl" placeholder="https://api.day.app/your_key/">
+                <div class="help-text">留空则禁用通知，支持Bark格式</div>
+            </div>
+            <button class="btn success" onclick="testNotify()">测试通知</button>
+        </div>
+
+        <div class="card">
+            <h3>域名配置</h3>
+            <div class="form-group">
+                <label>基础URL前缀</label>
+                <input type="text" id="baseUrl" placeholder="http://localhost:8001">
+                <div class="help-text">用于生成完整的API地址，如 http://localhost:8001 或 https://your-domain.com，留空则使用相对路径</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>日志配置</h3>
+            <div class="form-group">
+                <label>脚本日志保留时长（天）</label>
+                <input type="number" id="scriptLogRetention" min="1" max="90" value="7">
+                <div class="help-text">范围：1-90天，默认7天</div>
+            </div>
+            <div class="form-group">
+                <label>网关日志保留时长（天）</label>
+                <input type="number" id="gatewayLogRetention" min="1" max="90" value="7">
+                <div class="help-text">范围：1-90天，默认7天</div>
+            </div>
+            <button class="btn danger" onclick="cleanupLogs()">立即清理过期日志</button>
+        </div>
+
+        <div class="card">
+            <h3>静态资源配置</h3>
+            <div class="form-group">
+                <label>静态资源目录</label>
+                <input type="text" id="staticDir" class="readonly" readonly>
+                <div class="help-text">二进制文件输出路径</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>API文档</h3>
+            <div class="form-group">
+                <label>Swagger文档地址</label>
+                <input type="text" value="/docs" class="readonly" readonly>
+            </div>
+            <button class="btn" onclick="window.open('/docs', '_blank')">打开Swagger文档</button>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="btn success" onclick="saveSettings()">保存所有设置</button>
+        </div>
+    </div>
+
+    <script>
+        async function loadSettings() {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            
+            // 扫描配置
+            document.getElementById('scanInterval').value = data.scan_interval || 5;
+            document.getElementById('timeoutMin').value = data.timeout_min || 10;
+            
+            // 忽略模式
+            const defaultPatterns = 'node_modules\n__pycache__\n.git\n.venv\n*.pyc\n.*';
+            document.getElementById('ignorePatterns').value = data.scan_ignore_patterns || defaultPatterns;
+            
+            // 通知配置
+            document.getElementById('notifyUrl').value = data.notify_url || '';
+            
+            // 域名配置
+            document.getElementById('baseUrl').value = data.base_url || '';
+            
+            // 日志配置
+            document.getElementById('scriptLogRetention').value = data.script_log_retention_days || 7;
+            document.getElementById('gatewayLogRetention').value = data.gateway_log_retention_days || 7;
+            
+            // 只读路径
+            document.getElementById('pyDir').value = data.scripts_py_dir || 'scripts_repo/python';
+            document.getElementById('jsDir').value = data.scripts_js_dir || 'scripts_repo/js';
+            document.getElementById('staticDir').value = data.static_dir || 'static';
+        }
+
+        async function saveSettings() {
+            const settings = {
+                scan_interval: document.getElementById('scanInterval').value,
+                timeout_min: document.getElementById('timeoutMin').value,
+                scan_ignore_patterns: document.getElementById('ignorePatterns').value,
+                notify_url: document.getElementById('notifyUrl').value,
+                base_url: document.getElementById('baseUrl').value,
+                script_log_retention_days: document.getElementById('scriptLogRetention').value,
+                gateway_log_retention_days: document.getElementById('gatewayLogRetention').value
+            };
+
+            const res = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+
+            if (res.ok) {
+                alert('设置已保存！部分设置需要重启服务生效。');
+            } else {
+                alert('保存失败，请重试');
+            }
+        }
+
+        async function testNotify() {
+            const url = document.getElementById('notifyUrl').value;
+            if (!url) {
+                alert('请先设置通知URL');
+                return;
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: '【测试】ScriptGateway',
+                        body: '通知测试成功！',
+                        group: 'ScriptGateway'
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('测试通知已发送，请检查您的设备');
+                } else {
+                    alert('发送失败，请检查URL是否正确');
+                }
+            } catch (e) {
+                alert('发送失败：' + e.message);
+            }
+        }
+
+        async function cleanupLogs() {
+            if (!confirm('确定清理过期日志？')) return;
+
+            const res = await fetch('/api/logs/cleanup', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                alert(`清理完成！\n脚本日志：${data.cleaned.script} 个文件\n网关日志：${data.cleaned.gateway} 个文件`);
+            } else {
+                alert('清理失败：' + data.error);
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
