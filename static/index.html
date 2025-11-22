@@ -473,9 +473,41 @@
         async function copyCurl(id) {
             const res = await fetch(`/api/scripts/${id}`);
             const script = await res.json();
-            const curl = `curl -X POST http://localhost:8000/api/scripts/${id}/run -H "Content-Type: application/json" -d '{}'`;
-            await navigator.clipboard.writeText(curl);
-            alert('cURL已复制到剪贴板！');
+            
+            // 获取当前域名和端口
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            const curl = `curl -X POST ${baseUrl}/api/scripts/${id}/run -H "Content-Type: application/json" -d '{}'`;
+            
+            // 兼容性处理：检查 clipboard API 是否可用
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(curl);
+                    alert('cURL已复制到剪贴板！');
+                } catch (err) {
+                    // 降级方案：使用传统方法
+                    fallbackCopyText(curl);
+                }
+            } else {
+                // 不支持 clipboard API，使用降级方案
+                fallbackCopyText(curl);
+            }
+        }
+        
+        // 降级复制方案（兼容旧浏览器或非安全上下文）
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('cURL已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请手动复制：\n' + text);
+            }
+            document.body.removeChild(textarea);
         }
 
         async function openDebugModal(id) {
@@ -642,8 +674,17 @@
         function copyDebugResult() {
             const pre = document.querySelector('#debugResult pre');
             if (pre) {
-                navigator.clipboard.writeText(pre.textContent);
-                alert('结果已复制到剪贴板！');
+                const text = pre.textContent;
+                // 兼容性处理
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('结果已复制到剪贴板！');
+                    }).catch(() => {
+                        fallbackCopyText(text);
+                    });
+                } else {
+                    fallbackCopyText(text);
+                }
             }
         }
 
@@ -695,8 +736,17 @@
 
         async function copyLogs() {
             const text = document.getElementById('logsText').textContent;
-            await navigator.clipboard.writeText(text);
-            alert('日志已复制！');
+            // 兼容性处理
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    alert('日志已复制！');
+                } catch (err) {
+                    fallbackCopyText(text);
+                }
+            } else {
+                fallbackCopyText(text);
+            }
         }
 
         async function downloadLogs() {
