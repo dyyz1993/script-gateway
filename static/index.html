@@ -139,7 +139,10 @@
                 <span class="modal-close" onclick="closeDebugModal()">&times;</span>
             </div>
             <div id="debugForm"></div>
-            <button class="btn" id="runDebugBtn" onclick="runDebug()">执行</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn" id="runDebugBtn" onclick="runDebug()">执行</button>
+                <button class="btn-primary" onclick="copyDebugCurl()">复制 cURL</button>
+            </div>
             <div id="debugResult" style="margin-top: 20px;"></div>
         </div>
     </div>
@@ -583,6 +586,73 @@
 
         function closeDebugModal() {
             document.getElementById('debugModal').style.display = 'none';
+        }
+        
+        async function copyDebugCurl() {
+            if (!currentScriptId) {
+                alert('请先选择脚本！');
+                return;
+            }
+            
+            // 获取脚本信息
+            const res = await fetch(`/api/scripts/${currentScriptId}`);
+            const script = await res.json();
+            const argsSchema = JSON.parse(script.args_schema || '{}');
+            
+            // 收集表单参数
+            const params = {};
+            let hasFile = false;
+            
+            for (const key of Object.keys(argsSchema)) {
+                const input = document.getElementById(`debug_${key}`);
+                if (!input) continue;
+                
+                if (input.type === 'file') {
+                    if (input.files.length > 0) {
+                        hasFile = true;
+                        params[key] = `<文件: ${input.files[0].name}>`;
+                    }
+                } else if (input.value) {
+                    params[key] = input.value;
+                }
+            }
+            
+            // 获取当前域名和端口
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            
+            // 生成 cURL 命令
+            let curl;
+            if (hasFile) {
+                // 有文件上传，生成 multipart/form-data 格式
+                curl = `curl -X POST ${baseUrl}/api/scripts/${currentScriptId}/run`;
+                for (const [key, value] of Object.entries(params)) {
+                    if (value.startsWith('<文件:')) {
+                        curl += ` \\
+  -F "${key}=@/path/to/${value.replace('<文件: ', '').replace('>', '')}"`;
+                    } else {
+                        curl += ` \\
+  -F "${key}=${value}"`;
+                    }
+                }
+            } else {
+                // 普通 JSON 请求
+                const jsonData = JSON.stringify(params, null, 2);
+                curl = `curl -X POST ${baseUrl}/api/scripts/${currentScriptId}/run \\
+  -H "Content-Type: application/json" \\
+  -d '${jsonData}'`;
+            }
+            
+            // 复制到剪贴板
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(curl);
+                    alert('cURL 命令已复制到剪贴板！\n\n' + curl);
+                } catch (err) {
+                    fallbackCopyText(curl);
+                }
+            } else {
+                fallbackCopyText(curl);
+            }
         }
 
         async function runDebug() {
