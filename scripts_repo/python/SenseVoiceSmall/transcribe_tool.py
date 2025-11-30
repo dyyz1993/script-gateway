@@ -59,6 +59,14 @@ from src.core.error_handler import (
 try:
     from funasr import AutoModel
     from funasr.utils.postprocess_utils import rich_transcription_postprocess
+    
+    # 使用绝对路径导入model模块，解决打包后的导入问题
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    import sys
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    
     from model import SenseVoiceSmall
     FUNASR_AVAILABLE = True
 except ImportError as e:
@@ -223,6 +231,13 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
         except Exception as e:
             # 方法2: 使用SenseVoiceSmall的直接推理
             try:
+                # 使用绝对路径导入model模块，解决打包后的导入问题
+                import os
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                import sys
+                if current_dir not in sys.path:
+                    sys.path.insert(0, current_dir)
+                
                 from model import SenseVoiceSmall
                 
                 m, kwargs = SenseVoiceSmall.from_pretrained(model=model_dir, device=device)
