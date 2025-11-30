@@ -123,7 +123,10 @@ def parse_and_register(path: str):
                 f.write(args_schema)
         except Exception as e:
             status_load = 0
-            load_error_msg = f"Invalid schema JSON: {e}"
+            # 提供更详细的错误信息，包括原始输出内容
+            # 如果输出过长，只显示前500个字符
+            preview = schema_text[:500] + "..." if len(schema_text) > 500 else schema_text
+            load_error_msg = f"Invalid schema JSON: {e}\n原始输出内容:\n{preview}"
 
     upsert_script(
         filename=relative_path,
