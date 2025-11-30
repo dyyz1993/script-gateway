@@ -29,3 +29,13 @@ numpy>=1.21.0
 onnxruntime>=1.15.0
 jieba>=0.42.1
 PyYAML>=6.0
+
+# SenseVoiceSmall 依赖
+funasr>=1.0.0
+modelscope>=1.15.0
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.21.0
+onnxruntime>=1.15.0
+jieba>=0.42.1
+PyYAML>=6.0
