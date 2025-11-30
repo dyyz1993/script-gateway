@@ -1,5 +1,5 @@
 # 使用同时包含 Python 和 Node.js 的官方镜像
-FROM nikolaik/python-nodejs:python3.11-nodejs20
+FROM nikolaik/python-nodejs:python3.11-nodejs20-alpine
 
 # 设置工作目录
 WORKDIR /app

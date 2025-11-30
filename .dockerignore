@@ -27,7 +27,9 @@ tmp/
 
 # 数据库（如果不想打包进镜像）
 # data/
-# *.db
+*.db
+
+node_modules/
 
 # macOS
 .DS_Store
