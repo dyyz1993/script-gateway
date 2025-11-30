@@ -36,3 +36,13 @@ tmp/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# 项目文档和配置
+docs/
+.github/
+*.md
+.gitignore
+.git/
+docker-compose.yml
+Dockerfile
+.dockerignore

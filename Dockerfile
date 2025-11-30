@@ -39,8 +39,14 @@ RUN pip install --no-cache-dir \
 # 安装 Node.js 依赖
 RUN npm install --production
 
-# 复制应用代码
-COPY . .
+# 复制应用代码（只复制必要的文件）
+COPY src/ ./src/
+COPY app.py ./
+COPY requirements.txt ./
+COPY package.json ./
+COPY scripts_repo/ ./scripts_repo/
+COPY static/ ./static/
+COPY templates/ ./templates/
 
 # 创建必要的目录（使用实际的目录结构）
 RUN mkdir -p \
@@ -50,7 +56,10 @@ RUN mkdir -p \
     /app/templates \
     /app/logs/script \
     /app/logs/gateway \
-    /app/tmp
+    /app/tmp \
+    /tmp/funasr_cache \
+    /root/.cache/modelscope \
+    /root/.cache/huggingface
 
 # 暴露端口
 EXPOSE 8001
