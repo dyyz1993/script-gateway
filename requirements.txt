@@ -23,9 +23,9 @@ uvicorn==0.38.0
 # SenseVoiceSmall 依赖
 funasr>=1.0.0
 modelscope>=1.15.0
-torch>=2.0.0+cpu
-torchaudio>=2.0.0+cpu
+torch>=2.0.0
+torchaudio>=2.0.0
 numpy>=1.21.0
-onnxruntime-cpu>=1.15.0
+onnxruntime>=1.15.0
 jieba>=0.42.1
 PyYAML>=6.0
