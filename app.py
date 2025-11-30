@@ -13,6 +13,8 @@ from executor import run_script, terminate_script, get_running_scripts
 from scanner import start_scanner
 from logger import get_gateway_logger, read_script_logs, read_gateway_logs, list_script_log_files, cleanup_expired_logs, read_script_log_file
 from cleanup import start_cleanup_scheduler
+from temp_file_service import temp_file_service
+from error_handler import ScriptError, ErrorType
 
 app = FastAPI(title="ScriptGateway")
 
@@ -26,6 +28,7 @@ def on_startup():
     init_db()
     start_scanner()
     start_cleanup_scheduler()
+    temp_file_service.start_cleanup_service()
 
 
 @app.middleware("http")
@@ -36,6 +39,35 @@ async def log_requests(request: Request, call_next):
     duration = int((time.time() - start) * 1000)
     logger.info(f"{request.method} {request.url.path} {response.status_code} {duration}ms")
     return response
+
+
+@app.exception_handler(ScriptError)
+async def script_error_handler(request: Request, exc: ScriptError):
+    """处理脚本执行错误"""
+    logger = get_gateway_logger()
+    logger.error(f"脚本错误: {exc.message}, 类型: {exc.error_type.value}")
+    
+    return JSONResponse(
+        status_code=400,
+        content=exc.to_dict()
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """处理未捕获的异常"""
+    logger = get_gateway_logger()
+    logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
+    
+    error_response = ScriptError(
+        message=f"系统内部错误: {str(exc)}",
+        error_type=ErrorType.SYSTEM
+    ).to_dict()
+    
+    return JSONResponse(
+        status_code=500,
+        content=error_response
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -634,7 +666,8 @@ def api_toggle_notify(script_id: int, enabled: int = Form(...)):
 @app.get("/api/settings")
 def api_get_settings():
     from database import get_setting
-    keys = ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url"]
+    keys = ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url", 
+            "temp_file_cleanup_interval_hours", "temp_file_max_age_hours_default", "local_file_access_patterns"]
     vals = {k: get_setting(k) for k in keys}
     vals["scripts_py_dir"] = Config.SCRIPTS_PY_DIR
     vals["scripts_js_dir"] = Config.SCRIPTS_JS_DIR
@@ -645,9 +678,23 @@ def api_get_settings():
 @app.put("/api/settings")
 def api_put_settings(payload: Dict[str, Any]):
     from database import set_setting
-    for k in ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url"]:
+    for k in ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url", 
+              "temp_file_cleanup_interval_hours", "temp_file_max_age_hours_default", "local_file_access_patterns"]:
         if k in payload:
             set_setting(k, str(payload[k]))
+            
+            # 如果更新的是文件访问模式，同时更新全局media_middleware中的FileAccessChecker
+            if k == "local_file_access_patterns":
+                from media_middleware import media_middleware
+                # 处理逗号分隔或换行分隔的模式
+                patterns_str = str(payload[k])
+                if ',' in patterns_str:
+                    pattern_list = [p.strip() for p in patterns_str.split(',') if p.strip()]
+                else:
+                    pattern_list = [p.strip() for p in patterns_str.split('\n') if p.strip()]
+                
+                media_middleware.media_processor.file_access_checker.update_patterns(pattern_list)
+                
     return {"status": "success"}
 
 
@@ -917,6 +964,114 @@ def api_terminate_script(script_id: int):
     if result['status'] == 'error':
         return JSONResponse(status_code=400, content=result)
     return result
+
+
+# 临时文件管理 API
+
+@app.get("/api/temp-files/status")
+def api_temp_files_status():
+    """获取临时文件清理状态"""
+    return temp_file_service.get_cleanup_status()
+
+
+@app.post("/api/temp-files/cleanup")
+def api_temp_files_cleanup():
+    """执行一次临时文件清理"""
+    try:
+        deleted_count = temp_file_service.cleanup_once()
+        return {
+            "status": "success",
+            "deleted_count": deleted_count,
+            "message": f"已清理 {deleted_count} 个临时文件"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"清理失败: {str(e)}"
+            }
+        )
+
+
+@app.post("/api/temp-files/interval")
+def api_temp_files_set_interval(interval_hours: float = Form(...)):
+    """设置临时文件清理间隔（小时）"""
+    try:
+        if interval_hours <= 0:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": "清理间隔必须大于0"
+                }
+            )
+        
+        temp_file_service.update_cleanup_interval(interval_hours)
+        
+        # 保存到数据库设置
+        set_setting("temp_file_cleanup_interval", str(interval_hours))
+        
+        return {
+            "status": "success",
+            "interval_hours": interval_hours,
+            "message": f"清理间隔已设置为 {interval_hours} 小时"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"设置失败: {str(e)}"
+            }
+        )
+
+
+# 文件访问限制 API
+
+@app.get("/api/file-access/patterns")
+def api_file_access_patterns():
+    """获取文件访问限制模式"""
+    from file_access_checker import FileAccessChecker
+    checker = FileAccessChecker()
+    return {
+        "patterns": checker.get_allowed_patterns()
+    }
+
+
+@app.post("/api/file-access/patterns")
+def api_file_access_set_patterns(patterns: str = Form(...)):
+    """设置文件访问限制模式（每行一个模式）"""
+    try:
+        from file_access_checker import FileAccessChecker
+        from media_middleware import media_middleware
+        checker = FileAccessChecker()
+        
+        # 按行分割模式
+        pattern_list = [p.strip() for p in patterns.split('\n') if p.strip()]
+        
+        # 更新模式
+        checker.update_patterns(pattern_list)
+        
+        # 更新全局media_middleware中的FileAccessChecker
+        media_middleware.media_processor.file_access_checker.update_patterns(pattern_list)
+        
+        # 保存到数据库设置
+        set_setting("local_file_access_patterns", '\n'.join(pattern_list))
+        
+        return {
+            "status": "success",
+            "patterns": pattern_list,
+            "message": f"已更新 {len(pattern_list)} 个访问模式"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"设置失败: {str(e)}"
+            }
+        )
 
 
 if __name__ == "__main__":

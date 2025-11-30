@@ -10,6 +10,7 @@ from config import Config
 from database import insert_run, update_last_run
 from notifier import send_notify
 from logger import get_script_logger
+from media_middleware import media_middleware
 
 # 维护运行中的进程映射
 running_processes = {}  # {script_id: (process, script_name)}
@@ -67,6 +68,14 @@ def save_binary_output(script_name: str, data: bytes) -> Dict[str, Any]:
 
 
 def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params: Dict[str, Any]) -> Dict[str, Any]:
+    # 使用音视频处理中间件包装脚本执行
+    return media_middleware.wrap_script_execution(
+        script, args_schema, http_params, _execute_script
+    )
+
+
+def _execute_script(script: Dict[str, Any], args_schema: Dict[str, Any], processed_params: Dict[str, Any]) -> Dict[str, Any]:
+    """实际执行脚本的内部函数"""
     script_name = script['filename']
     script_id = script['id']
     stype = script['script_type']
@@ -74,10 +83,10 @@ def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params:
     # 获取脚本日志记录器（使用文件名去除路径和扩展名）
     log_name = os.path.splitext(os.path.basename(script_name))[0]
     logger = get_script_logger(log_name)
-    logger.info(f"开始执行脚本: {script_name}, 参数: {json.dumps(http_params, ensure_ascii=False)}")
+    logger.info(f"开始执行脚本: {script_name}, 参数: {json.dumps(processed_params, ensure_ascii=False)}")
 
-    # files provided in http_params as absolute path (pre-saved by API layer)
-    cli, eff = build_cli_args(args_schema, http_params)
+    # files provided in processed_params as absolute path (processed by media middleware)
+    cli, eff = build_cli_args(args_schema, processed_params)
 
     cmd = []
     script_path = None
@@ -141,7 +150,7 @@ def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params:
                 }
                 output_file_url = meta['url']
             update_last_run(script['id'], 1)
-            run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, status, json.dumps(http_params), stdout_preview, None, output_file_url)
+            run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, status, json.dumps(processed_params), stdout_preview, None, output_file_url)
             result["run_id"] = run_id
             if script.get('notify_enabled') == 1:
                 send_notify(f"【成功】{script['filename']}", "执行完毕")
@@ -151,7 +160,7 @@ def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params:
             stderr_text = err.decode('utf-8', errors='ignore')
             logger.error(f"执行失败，耗时 {duration_ms}ms: {stderr_text[:200]}")
             update_last_run(script['id'], 2)
-            run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 2, json.dumps(http_params), None, stderr_text, None)
+            run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 2, json.dumps(processed_params), None, stderr_text, None)
             result = {
                 "status": "error",
                 "script_id": script['id'],
@@ -170,7 +179,7 @@ def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params:
         duration_ms = int((time.time() - t0) * 1000)
         logger.error(f"执行超时，耗时 {duration_ms}ms")
         update_last_run(script['id'], 2)
-        run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 3, json.dumps(http_params), None, "timeout", None)
+        run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 3, json.dumps(processed_params), None, "timeout", None)
         result = {
             "status": "error",
             "script_id": script['id'],
@@ -189,7 +198,7 @@ def run_script(script: Dict[str, Any], args_schema: Dict[str, Any], http_params:
         duration_ms = int((time.time() - t0) * 1000)
         logger.error(f"执行异常，耗时 {duration_ms}ms: {str(e)}")
         update_last_run(script['id'], 2)
-        run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 2, json.dumps(http_params), None, str(e), None)
+        run_id = insert_run(script['id'], started, time.strftime("%Y-%m-%d %H:%M:%S"), duration_ms, 2, json.dumps(processed_params), None, str(e), None)
         
         if script.get('notify_enabled') == 1:
             send_notify(f"【失败】{script['filename']}", str(e))

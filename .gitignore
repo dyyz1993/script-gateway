@@ -11,3 +11,5 @@ package-lock.json
 !static/*.html
 !static/*.js
 !static/*.css
+static/resources/*
+static/output/*

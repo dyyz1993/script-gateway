@@ -101,6 +101,35 @@
         </div>
 
         <div class="card">
+            <h3>临时文件管理</h3>
+            <div class="form-group">
+                <label>临时文件清理间隔（小时）</label>
+                <input type="number" id="tempFileCleanupInterval" min="1" max="168" value="24" step="0.1">
+                <div class="help-text">范围：1-168小时，默认24小时。系统将定期清理超过此时间的临时文件。</div>
+            </div>
+            <div class="form-group">
+                <label>临时文件最大保存时间（小时）</label>
+                <input type="number" id="tempFileMaxAge" min="1" max="168" value="24">
+                <div class="help-text">范围：1-168小时，默认24小时。超过此时间的临时文件将被清理。</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>文件访问限制</h3>
+            <div class="form-group">
+                <label>本地文件访问模式</label>
+                <textarea id="localFileAccessPatterns" rows="6" style="width: 100%; font-family: monospace; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;" placeholder="/tmp/**&#10;/var/tmp/**&#10;/Users/*/Downloads/**"></textarea>
+                <div class="help-text">
+                    每行一个路径模式，支持通配符：<br>
+                    - <code>/tmp/**</code> - 允许访问/tmp目录及其所有子目录<br>
+                    - <code>/var/tmp/**</code> - 允许访问/var/tmp目录及其所有子目录<br>
+                    - <code>/Users/*/Downloads/**</code> - 允许访问任何用户的Downloads目录<br>
+                    - 留空表示不限制访问任何文件
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <h3>静态资源配置</h3>
             <div class="form-group">
                 <label>静态资源目录</label>
@@ -146,6 +175,13 @@
             document.getElementById('scriptLogRetention').value = data.script_log_retention_days || 7;
             document.getElementById('gatewayLogRetention').value = data.gateway_log_retention_days || 7;
             
+            // 临时文件管理
+            document.getElementById('tempFileCleanupInterval').value = data.temp_file_cleanup_interval_hours || 24;
+            document.getElementById('tempFileMaxAge').value = data.temp_file_max_age_hours_default || 24;
+            
+            // 文件访问限制
+            document.getElementById('localFileAccessPatterns').value = data.local_file_access_patterns || '';
+            
             // 只读路径
             document.getElementById('pyDir').value = data.scripts_py_dir || 'scripts_repo/python';
             document.getElementById('jsDir').value = data.scripts_js_dir || 'scripts_repo/js';
@@ -160,7 +196,10 @@
                 notify_url: document.getElementById('notifyUrl').value,
                 base_url: document.getElementById('baseUrl').value,
                 script_log_retention_days: document.getElementById('scriptLogRetention').value,
-                gateway_log_retention_days: document.getElementById('gatewayLogRetention').value
+                gateway_log_retention_days: document.getElementById('gatewayLogRetention').value,
+                temp_file_cleanup_interval_hours: document.getElementById('tempFileCleanupInterval').value,
+                temp_file_max_age_hours_default: document.getElementById('tempFileMaxAge').value,
+                local_file_access_patterns: document.getElementById('localFileAccessPatterns').value
             };
 
             const res = await fetch('/api/settings', {

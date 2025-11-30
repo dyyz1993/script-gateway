@@ -77,6 +77,39 @@
         input:checked + .slider:before { transform: translateX(22px); }
         .editable-cell { cursor: pointer; }
         .editable-cell:hover { background: #f0f8ff; }
+        .status-pending { 
+            cursor: pointer; 
+            position: relative; 
+            text-decoration: underline dotted;
+        }
+        .status-pending:hover::after {
+            content: attr(data-reason);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            max-width: 300px;
+            white-space: normal;
+            line-height: 1.4;
+        }
+        .status-pending:hover::before {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            margin-bottom: -6px;
+        }
     </style>
 </head>
 <body>
@@ -326,11 +359,25 @@
                 const isRunning = runningScripts.has(item.id);
                 const errorId = `error-${item.id}-${index}`;
                 
+                // 生成待加载状态的原因说明
+                let pendingReason = '';
+                if (item.status_load === 0) {
+                    const reasons = [];
+                    if (item.load_error_msg) {
+                        reasons.push(`错误信息: ${item.load_error_msg}`);
+                    }
+                    reasons.push('可能原因:');
+                    reasons.push('1. 脚本缺少入口标识 (Python: if __name__ == "__main__": 或 JS: module.exports/export default)');
+                    reasons.push('2. 脚本执行 --_sys_get_schema 参数时未返回有效的JSON schema');
+                    reasons.push('3. 脚本存在语法错误或执行超时');
+                    pendingReason = reasons.join('\\n');
+                }
+                
                 const loadStatus = item.status_load === 1 ? 
                     '<span class="status-success">成功</span>' : 
                     (item.status_load === 2 ? 
                         `<span class="status-fail">失败</span><br><span class="error-toggle" onclick="toggleError('${errorId}')">查看错误详情</span><div id="${errorId}" class="error-content"><div class="json-viewer">${escapeHtml(item.load_error_msg || '')}</div></div>` : 
-                        '<span class="status-pending">待加载</span>');
+                        `<span class="status-pending" data-reason="${pendingReason}">待加载</span>`);
                 
                 const lastRunDisplay = isRunning ? 
                     '<span class="status-pending">运行中...</span>' : 
