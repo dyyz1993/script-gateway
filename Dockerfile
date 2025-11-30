@@ -40,24 +40,6 @@ COPY requirements.txt package.json ./
 
 # ========== 5. 安装剩余Python依赖（清理缓存，减少体积） ==========
 RUN pip install --no-cache-dir -r requirements.txt \
-    # 预装常用库（合并安装，减少镜像层）
-    qrcode[pil] \
-    numpy \
-    pandas \
-    openpyxl \
-    python-dateutil \
-    pytz \
-    beautifulsoup4 \
-    lxml \
-    pyyaml \
-    redis \
-    pymysql \
-    psycopg2-binary \
-    # SenseVoiceSmall 相关依赖（补充）
-    modelscope>=1.15.0 \
-    funasr>=1.0.0 \
-    onnxruntime-cpu>=1.15.0 \
-    jieba>=0.42.1 \
     # 清理pip缓存（减少镜像体积约100MB）
     && rm -rf /root/.cache/pip
 
