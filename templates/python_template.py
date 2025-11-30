@@ -18,9 +18,10 @@ from typing import Dict, Any, Optional, Union
 from pathlib import Path
 import traceback
 
-# 添加项目根目录到Python路径，以便导入error_handler模块
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)
+# 注意：项目根目录已通过PYTHONPATH环境变量自动设置，无需手动添加
+# 如果在IDE中运行遇到导入问题，可以取消下面的注释
+# project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# sys.path.insert(0, project_root)
 
 from src.core.error_handler import (
     handle_script_errors, 

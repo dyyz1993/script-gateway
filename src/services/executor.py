@@ -4,9 +4,11 @@ import json
 import time
 import uuid
 import subprocess
+import sys
 from typing import Dict, Any, Tuple
 
 from ..core.config import Config
+from ..core.path_init import get_project_root
 from ..core.database import insert_run, update_last_run
 from .notifier import send_notify
 from ..utils.logger import get_script_logger
@@ -58,7 +60,7 @@ def save_binary_output(script_name: str, data: bytes) -> Dict[str, Any]:
     url = "/" + rel.replace(os.sep, "/")
     
     # 如果配置了base_url，则生成完整URL
-    from database import get_setting
+    from ..core.database import get_setting
     base_url = get_setting('base_url')
     if base_url:
         base_url = base_url.rstrip('/')
@@ -90,9 +92,26 @@ def _execute_script(script: Dict[str, Any], args_schema: Dict[str, Any], process
 
     cmd = []
     script_path = None
+    # 设置环境变量，确保脚本可以正确导入项目模块
+    env = os.environ.copy()
+    project_root = get_project_root()
+    
     if stype == 'python':
         # 使用相对路径拼接完整路径
         script_path = os.path.join(Config.SCRIPTS_PY_DIR, script_name)
+        
+        # 确保项目根目录在PYTHONPATH中
+        python_path = env.get('PYTHONPATH', '')
+        if python_path:
+            env['PYTHONPATH'] = f"{project_root}:{python_path}"
+        else:
+            env['PYTHONPATH'] = project_root
+            
+        # 为SenseVoiceSmall脚本添加特殊路径
+        if 'SenseVoiceSmall' in script_name:
+            sensevoice_path = os.path.join(project_root, "scripts_repo", "python", "SenseVoiceSmall")
+            env['PYTHONPATH'] = f"{sensevoice_path}:{env['PYTHONPATH']}"
+            
         cmd = ['python3', script_path] + cli
     else:
         # 使用相对路径拼接完整路径
@@ -108,7 +127,8 @@ def _execute_script(script: Dict[str, Any], args_schema: Dict[str, Any], process
 
     t0 = time.time()
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # 使用设置好环境变量的env来启动进程
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         
         # 保存进程引用
         running_processes[script_id] = (proc, script_name)

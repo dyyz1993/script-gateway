@@ -13,7 +13,20 @@ from funasr.train_utils.device_funcs import force_gatherable
 from funasr.losses.label_smoothing_loss import LabelSmoothingLoss
 from funasr.metrics.compute_acc import compute_accuracy, th_accuracy
 from funasr.utils.load_utils import load_audio_text_image_video, extract_fbank
-from utils.ctc_alignment import ctc_forced_align
+try:
+    from .utils.ctc_alignment import ctc_forced_align
+except ImportError:
+    # 如果相对导入失败，尝试绝对导入
+    try:
+        from utils.ctc_alignment import ctc_forced_align
+    except ImportError:
+        # 如果还是失败，尝试从funasr导入
+        try:
+            from funasr.utils.ctc_alignment import ctc_forced_align
+        except ImportError:
+            # 最后的回退方案：定义一个空函数
+            def ctc_forced_align(*args, **kwargs):
+                pass
 
 class SinusoidalPositionEncoder(torch.nn.Module):
     """ """

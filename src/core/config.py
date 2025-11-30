@@ -45,7 +45,7 @@ class Config:
             配置值
         """
         try:
-            from database import get_setting
+            from .database import get_setting
             db_value = get_setting(key)
             if db_value is not None:
                 return db_value

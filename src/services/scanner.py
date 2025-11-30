@@ -24,7 +24,26 @@ def md5_file(path: str) -> str:
 
 def run_get_schema(cmd: list[str]) -> tuple[bool, Optional[str], Optional[str]]:
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # 设置环境变量，确保PYTHONPATH包含项目根目录和SenseVoiceSmall路径
+        env = os.environ.copy()
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sensevoice_path = os.path.join(project_root, 'scripts_repo', 'python', 'SenseVoiceSmall')
+        
+        # 确保PYTHONPATH包含必要的路径
+        python_path = env.get('PYTHONPATH', '')
+        paths_to_add = [project_root, sensevoice_path]
+        
+        # 将新路径添加到PYTHONPATH
+        for path in paths_to_add:
+            if path not in python_path:
+                if python_path:
+                    python_path += os.pathsep + path
+                else:
+                    python_path = path
+        
+        env['PYTHONPATH'] = python_path
+        
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         out, err = proc.communicate(timeout=30)
         if proc.returncode == 0:
             text = out.decode('utf-8', errors='ignore')

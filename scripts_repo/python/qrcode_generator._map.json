@@ -1,1 +1,0 @@
-{"text": {"flag": "--text", "type": "str", "required": true, "help": "要转换为二维码的文本"}, "size": {"flag": "--size", "type": "str", "required": false, "help": "二维码大小(small/medium/large)", "default": "medium"}}

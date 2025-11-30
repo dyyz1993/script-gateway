@@ -8,6 +8,7 @@ import shutil
 import time
 
 from src.core.config import Config, ensure_dirs
+from src.core.path_init import initialize_paths
 from src.core.database import init_db, list_scripts, get_script_by_id, update_alias, get_setting, set_setting
 from src.services.executor import run_script, terminate_script, get_running_scripts
 from src.services.scanner import start_scanner
@@ -25,6 +26,9 @@ app.mount("/static", StaticFiles(directory=Config.STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def on_startup():
+    # 初始化路径设置，确保所有模块可以正确导入
+    initialize_paths()
+    
     init_db()
     start_scanner()
     start_cleanup_scheduler()
@@ -264,7 +268,7 @@ def api_get_script(script_id: int):
 @app.patch("/api/scripts/{script_id}")
 def api_update_script(script_id: int, payload: Dict[str, Any]):
     """更新脚本信息（如notify_enabled等）"""
-    from database import get_conn
+    from src.core.database import get_conn
     script = get_script_by_id(script_id)
     if not script:
         return JSONResponse(status_code=404, content={"error": "not found"})
@@ -367,7 +371,7 @@ def api_update_script_content(script_id: int, payload: Dict[str, Any]):
         
         # 更新备注
         if alias is not None:
-            from database import get_conn
+            from src.core.database import get_conn
             conn = get_conn()
             conn.execute(
                 "UPDATE scripts SET alias_name=?, updated_at=datetime('now') WHERE id=?",  # 修正为 alias_name
@@ -479,7 +483,7 @@ async def api_run_script_get(script_id: int, request: Request):
 @app.post("/api/scripts/create")
 async def api_create_script(payload: Dict[str, Any]):
     import os
-    from scanner import parse_and_register
+    from src.services.scanner import parse_and_register
     runtime = payload.get('runtime', 'python')
     filename = payload.get('filename', '')
     alias = payload.get('alias', '')
@@ -519,7 +523,7 @@ async def api_create_script(payload: Dict[str, Any]):
 @app.post("/api/scripts/upload")
 async def api_upload_scripts(request: Request):
     import os, json
-    from scanner import parse_and_register
+    from src.services.scanner import parse_and_register
     form = await request.form()
     runtime = form.get('runtime')  # 可选
     # 收集文件（支持多文件与目录上传）
@@ -610,7 +614,7 @@ def api_schema_download(script_id: int):
 
 @app.delete("/api/scripts/{script_id}")
 def api_delete_script(script_id: int, delete_file: bool = False):
-    from database import get_conn
+    from src.core.database import get_conn
     conn = get_conn()
     script = get_script_by_id(script_id)
     if not script:
@@ -656,7 +660,7 @@ def api_batch_delete(payload: Dict[str, Any]):
 
 @app.patch("/api/scripts/{script_id}/notify")
 def api_toggle_notify(script_id: int, enabled: int = Form(...)):
-    from database import get_conn
+    from src.core.database import get_conn
     conn = get_conn()
     conn.execute("UPDATE scripts SET notify_enabled=?, updated_at=datetime('now') WHERE id=?", (1 if enabled else 0, script_id))
     conn.commit()
@@ -1043,8 +1047,8 @@ def api_file_access_patterns():
 def api_file_access_set_patterns(patterns: str = Form(...)):
     """设置文件访问限制模式（每行一个模式）"""
     try:
-        from file_access_checker import FileAccessChecker
-        from media_middleware import media_middleware
+        from src.utils.file_access_checker import FileAccessChecker
+        from src.api.media_middleware import media_middleware
         checker = FileAccessChecker()
         
         # 按行分割模式

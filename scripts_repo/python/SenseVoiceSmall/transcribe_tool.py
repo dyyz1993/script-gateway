@@ -232,9 +232,7 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
             # 方法2: 使用SenseVoiceSmall的直接推理
             try:
                 # 使用绝对路径导入model模块，解决打包后的导入问题
-                import os
                 current_dir = os.path.dirname(os.path.abspath(__file__))
-                import sys
                 if current_dir not in sys.path:
                     sys.path.insert(0, current_dir)
                 

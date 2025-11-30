@@ -272,7 +272,7 @@ def convert_to_url(file_path: str) -> str:
         url = "/" + rel_path.replace(os.sep, "/")
         
         # 如果配置了base_url，则生成完整URL
-        from database import get_setting
+        from .database import get_setting
         base_url = get_setting('base_url')
         if base_url:
             base_url = base_url.rstrip('/')

@@ -10,17 +10,52 @@ import torch
 import librosa
 import numpy as np
 
-from utils.infer_utils import (
-    CharTokenizer,
-    Hypothesis,
-    ONNXRuntimeError,
-    OrtInferSession,
-    TokenIDConverter,
-    get_logger,
-    read_yaml,
-)
-from utils.frontend import WavFrontend
-from utils.infer_utils import pad_list
+try:
+    from .infer_utils import (
+        CharTokenizer,
+        Hypothesis,
+        ONNXRuntimeError,
+        OrtInferSession,
+        TokenIDConverter,
+        get_logger,
+        read_yaml,
+    )
+except ImportError:
+    # 如果相对导入失败，尝试绝对导入
+    try:
+        from infer_utils import (
+            CharTokenizer,
+            Hypothesis,
+            ONNXRuntimeError,
+            OrtInferSession,
+            TokenIDConverter,
+            get_logger,
+            read_yaml,
+        )
+    except ImportError:
+        # 如果还是失败，尝试从funasr导入
+        from funasr.utils.infer_utils import (
+            CharTokenizer,
+            Hypothesis,
+            ONNXRuntimeError,
+            OrtInferSession,
+            TokenIDConverter,
+            get_logger,
+            read_yaml,
+        )
+try:
+    from .frontend import WavFrontend
+except ImportError:
+    from funasr.frontend import WavFrontend
+try:
+    from .infer_utils import pad_list
+except ImportError:
+    # 如果相对导入失败，尝试绝对导入
+    try:
+        from infer_utils import pad_list
+    except ImportError:
+        # 如果还是失败，尝试从funasr导入
+        from funasr.utils.infer_utils import pad_list
 
 logging = get_logger()
 
