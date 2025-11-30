@@ -4,9 +4,10 @@ FROM nikolaik/python-nodejs:python3.11-nodejs20
 # 设置工作目录
 WORKDIR /app
 
-# 安装必要的系统工具(curl 用于健康检查)
+# 安装必要的系统工具(curl 用于健康检查, ffmpeg 用于音视频处理)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # 配置 pip 国内镜像源
