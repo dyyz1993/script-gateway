@@ -8,3 +8,6 @@ logs
 venv
 .venv
 package-lock.json
+!static/*.html
+!static/*.js
+!static/*.css
