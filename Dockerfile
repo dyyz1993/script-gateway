@@ -1,35 +1,30 @@
-# 替换为原生支持arm64的Python Alpine镜像，手动安装Node.js
-FROM python:3.11-alpine
+# 使用同时包含 Python 和 Node.js 的官方镜像
+FROM nikolaik/python-nodejs:python3.11-nodejs20
+
 
 # 设置工作目录
 WORKDIR /app
 
-# ========== 核心修复：补全apk add的续行符，避免语法错误 ==========
-# 所有apk add的参数必须用\换行，确保在同一个RUN指令内
-RUN apk add --no-cache \
+# 安装必要的系统工具(curl 用于健康检查, ffmpeg 用于音视频处理)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
-    nodejs \
-    npm \
-    # Python库编译依赖（每行末尾加\，最后一行不加）
-    gcc \
-    musl-dev \
-    postgresql-dev \  # 适配psycopg2-binary
-    libxml2-dev \     # 适配lxml
-    libxslt-dev \
-    python3-dev \
-    # 清理apk缓存
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/lib/apt/lists/*
 
-# ========== 配置国内镜像源 ==========
-RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple && \
-    npm config set registry https://registry.npmmirror.com
+# 配置 pip 国内镜像源
+RUN pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 
-# ========== 复制依赖文件 ==========
+# 配置 npm 国内镜像源
+RUN npm config set registry https://registry.npmmirror.com
+
+# 复制依赖文件
 COPY requirements.txt package.json ./
 
-# ========== 安装Python依赖 + 清理缓存 ==========
-RUN pip install --no-cache-dir -r requirements.txt \
+# 安装 Python 依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 预装常见的 Python 库（可选，根据实际需求添加）
+RUN pip install --no-cache-dir \
     qrcode[pil] \
     numpy \
     pandas \
@@ -41,18 +36,21 @@ RUN pip install --no-cache-dir -r requirements.txt \
     pyyaml \
     redis \
     pymysql \
-    psycopg2-binary \
-    && rm -rf /root/.cache/pip
+    psycopg2-binary
 
-# ========== 安装Node.js依赖 + 清理缓存 ==========
-RUN npm install --production \
-    && npm cache clean --force \
-    && rm -rf /root/.npm
+# 安装 Node.js 依赖
+RUN npm install --production
 
-# ========== 复制应用代码（合并+去重） ==========
-COPY src/ app.py scripts_repo/ static/ templates/ ./
+# 复制应用代码（只复制必要的文件）
+COPY src/ ./src/
+COPY app.py ./
+COPY requirements.txt ./
+COPY package.json ./
+COPY scripts_repo/ ./scripts_repo/
+COPY static/ ./static/
+COPY templates/ ./templates/
 
-# ========== 创建必要目录 ==========
+# 创建必要的目录（使用实际的目录结构）
 RUN mkdir -p \
     /app/scripts_repo/python \
     /app/scripts_repo/js \
@@ -65,10 +63,12 @@ RUN mkdir -p \
     /root/.cache/modelscope \
     /root/.cache/huggingface
 
-# ========== 暴露端口 + 健康检查 + 启动命令 ==========
+# 暴露端口
 EXPOSE 8001
 
+# 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
+# 启动命令
 CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]
