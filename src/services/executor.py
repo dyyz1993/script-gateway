@@ -6,11 +6,11 @@ import uuid
 import subprocess
 from typing import Dict, Any, Tuple
 
-from config import Config
-from database import insert_run, update_last_run
-from notifier import send_notify
-from logger import get_script_logger
-from media_middleware import media_middleware
+from ..core.config import Config
+from ..core.database import insert_run, update_last_run
+from .notifier import send_notify
+from ..utils.logger import get_script_logger
+from ..api.media_middleware import media_middleware
 
 # 维护运行中的进程映射
 running_processes = {}  # {script_id: (process, script_name)}

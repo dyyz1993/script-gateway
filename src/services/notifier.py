@@ -3,7 +3,7 @@ import requests
 from typing import Optional
 import logging
 
-from database import get_setting
+from ..core.database import get_setting
 
 logger = logging.getLogger('notifier')
 logger.setLevel(logging.INFO)

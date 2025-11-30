@@ -10,9 +10,9 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Tuple, List
 from urllib.parse import urlparse
-from config import Config
-from database import get_setting
-from file_access_checker import FileAccessChecker
+from ..core.config import Config
+from ..core.database import get_setting
+from ..utils.file_access_checker import FileAccessChecker
 
 
 class MediaProcessor:

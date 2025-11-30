@@ -5,9 +5,10 @@ import os
 from io import StringIO
 
 # 添加项目根目录到Python路径，以便导入error_handler模块
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
-from error_handler import (
+from src.core.error_handler import (
     handle_script_errors, 
     ValidationError, 
     ResourceError, 

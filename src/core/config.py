@@ -2,7 +2,8 @@ import os
 
 class Config:
     # Paths
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    # 获取项目根目录（src/core 的上一级目录）
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     DB_PATH = os.path.join(BASE_DIR, "gateway.db")
     SCRIPTS_PY_DIR = os.path.join(BASE_DIR, "scripts_repo", "python")
     SCRIPTS_JS_DIR = os.path.join(BASE_DIR, "scripts_repo", "js")

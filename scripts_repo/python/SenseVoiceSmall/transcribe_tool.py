@@ -43,7 +43,7 @@ output_capture = OutputCapture()
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.insert(0, project_root)
 
-from error_handler import (
+from src.core.error_handler import (
     handle_script_errors, 
     ValidationError, 
     ResourceError, 

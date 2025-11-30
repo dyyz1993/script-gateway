@@ -1,7 +1,7 @@
 import os
 import re
 from typing import List, Tuple
-from config import Config
+from ..core.config import Config
 
 
 class FileAccessChecker:

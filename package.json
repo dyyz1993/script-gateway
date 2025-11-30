@@ -6,6 +6,7 @@
   "dependencies": {
     "axios": "^1.13.2",
     "puppeteer-core": "^24.31.0",
+    "qrcode": "^1.5.4",
     "uuid": "^9.0.1"
   }
 }

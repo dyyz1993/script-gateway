@@ -8,8 +8,8 @@ import fnmatch
 from threading import Thread, Event
 from typing import Optional
 
-from config import Config, ensure_dirs
-from database import upsert_script, init_db, get_setting
+from ..core.config import Config, ensure_dirs
+from ..core.database import upsert_script, init_db, get_setting
 
 STOP_EVENT = Event()
 

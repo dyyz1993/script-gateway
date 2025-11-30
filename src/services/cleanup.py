@@ -1,8 +1,8 @@
 import threading
 import time
 import schedule
-from database import get_setting
-from logger import cleanup_expired_logs, get_gateway_logger
+from ..core.database import get_setting
+from ..utils.logger import cleanup_expired_logs, get_gateway_logger
 
 
 def cleanup_task():

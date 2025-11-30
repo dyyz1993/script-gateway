@@ -4,8 +4,8 @@
 import threading
 import time
 from typing import Optional
-from temp_file_manager import TempFileManager
-from logger import get_gateway_logger
+from .temp_file_manager import TempFileManager
+from ..utils.logger import get_gateway_logger
 
 
 class TempFileService:

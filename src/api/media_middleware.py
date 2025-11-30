@@ -4,8 +4,8 @@
 import os
 import json
 from typing import Dict, Any, List, Tuple
-from media_processor import MediaProcessor
-from error_handler import ScriptError, ErrorType, handle_script_errors
+from .media_processor import MediaProcessor
+from ..core.error_handler import ScriptError, ErrorType, handle_script_errors
 
 
 class MediaProcessingMiddleware:

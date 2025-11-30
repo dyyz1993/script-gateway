@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timedelta
-from config import Config
+from ..core.config import Config
 
 # 脚本日志配置
 def get_script_logger(script_name: str):

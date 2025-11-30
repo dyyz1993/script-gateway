@@ -3,7 +3,7 @@ import json
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from config import Config
+from .config import Config
 
 _conn: Optional[sqlite3.Connection] = None
 

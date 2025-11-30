@@ -7,9 +7,9 @@ import threading
 from pathlib import Path
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
-from config import Config
-from database import get_setting, set_setting
-from logger import get_gateway_logger
+from ..core.config import Config
+from ..core.database import get_setting, set_setting
+from ..utils.logger import get_gateway_logger
 
 
 class TempFileManager:

@@ -5,8 +5,8 @@ import sys
 import os
 from typing import List, Dict, Any, Tuple
 
-from database import get_conn
-from config import Config
+from ..core.database import get_conn
+from ..core.config import Config
 
 
 def list_python_deps() -> List[Dict[str, str]]:

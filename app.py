@@ -7,14 +7,14 @@ import json
 import shutil
 import time
 
-from config import Config, ensure_dirs
-from database import init_db, list_scripts, get_script_by_id, update_alias, get_setting, set_setting
-from executor import run_script, terminate_script, get_running_scripts
-from scanner import start_scanner
-from logger import get_gateway_logger, read_script_logs, read_gateway_logs, list_script_log_files, cleanup_expired_logs, read_script_log_file
-from cleanup import start_cleanup_scheduler
-from temp_file_service import temp_file_service
-from error_handler import ScriptError, ErrorType
+from src.core.config import Config, ensure_dirs
+from src.core.database import init_db, list_scripts, get_script_by_id, update_alias, get_setting, set_setting
+from src.services.executor import run_script, terminate_script, get_running_scripts
+from src.services.scanner import start_scanner
+from src.utils.logger import get_gateway_logger, read_script_logs, read_gateway_logs, list_script_log_files, cleanup_expired_logs, read_script_log_file
+from src.services.cleanup import start_cleanup_scheduler
+from src.api.temp_file_service import temp_file_service
+from src.core.error_handler import ScriptError, ErrorType
 
 app = FastAPI(title="ScriptGateway")
 
@@ -140,14 +140,14 @@ def api_update_alias(script_id: int, alias: str = Form(...)):
 @app.get("/api/scripts/running")
 def api_running_scripts():
     """获取运行中的脚本列表"""
-    from executor import get_running_scripts
+    from src.services.executor import get_running_scripts
     return {"running": list(get_running_scripts())}
 
 
 @app.get("/api/scripts/swagger-all")
 def api_all_scripts_swagger():
     """生成所有脚本的统一Swagger文档"""
-    from database import get_conn
+    from src.core.database import get_conn
     conn = get_conn()
     scripts = conn.execute("SELECT * FROM scripts WHERE status_load = 1 ORDER BY script_type, filename").fetchall()
     
@@ -340,7 +340,7 @@ def api_get_script_content(script_id: int):
 @app.put("/api/scripts/{script_id}/content")
 def api_update_script_content(script_id: int, payload: Dict[str, Any]):
     """更新脚本文件内容"""
-    from scanner import parse_and_register
+    from src.services.scanner import parse_and_register
     
     script = get_script_by_id(script_id)
     if not script:
@@ -665,7 +665,7 @@ def api_toggle_notify(script_id: int, enabled: int = Form(...)):
 
 @app.get("/api/settings")
 def api_get_settings():
-    from database import get_setting
+    from src.core.database import get_setting
     keys = ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url", 
             "temp_file_cleanup_interval_hours", "temp_file_max_age_hours_default", "local_file_access_patterns"]
     vals = {k: get_setting(k) for k in keys}
@@ -677,7 +677,7 @@ def api_get_settings():
 
 @app.put("/api/settings")
 def api_put_settings(payload: Dict[str, Any]):
-    from database import set_setting
+    from src.core.database import set_setting
     for k in ["scan_interval", "timeout_min", "notify_url", "script_log_retention_days", "gateway_log_retention_days", "scan_ignore_patterns", "base_url", 
               "temp_file_cleanup_interval_hours", "temp_file_max_age_hours_default", "local_file_access_patterns"]:
         if k in payload:
@@ -685,7 +685,7 @@ def api_put_settings(payload: Dict[str, Any]):
             
             # 如果更新的是文件访问模式，同时更新全局media_middleware中的FileAccessChecker
             if k == "local_file_access_patterns":
-                from media_middleware import media_middleware
+                from src.api.media_middleware import media_middleware
                 # 处理逗号分隔或换行分隔的模式
                 patterns_str = str(payload[k])
                 if ',' in patterns_str:
@@ -701,10 +701,10 @@ def api_put_settings(payload: Dict[str, Any]):
 @app.get("/api/deps")
 def api_list_deps(runtime: str = Query('python', regex="^(python|js|javascript)$")):
     if runtime == 'python':
-        from deps import list_python_deps
+        from src.utils.deps import list_python_deps
         return {"runtime": "python", "installed": list_python_deps()}
     elif runtime == 'js' or runtime == 'javascript':
-        from deps import list_node_deps
+        from src.utils.deps import list_node_deps
         return {"runtime": runtime, "installed": list_node_deps()}
     return JSONResponse(status_code=400, content={"error": "invalid runtime"})
 
@@ -715,11 +715,11 @@ def api_parse_deps(payload: Dict[str, Any]):
     content = payload.get('content', '')
     
     if runtime == 'python':
-        from deps import parse_requirements_text, list_python_deps
+        from src.utils.deps import parse_requirements_text, list_python_deps
         requested = parse_requirements_text(content)
         installed = list_python_deps()
     elif runtime == 'js' or runtime == 'javascript':
-        from deps import parse_package_json, list_node_deps
+        from src.utils.deps import parse_package_json, list_node_deps
         requested = parse_package_json(content)
         installed = list_node_deps()
     else:
@@ -751,12 +751,12 @@ def api_install_deps(payload: Dict[str, Any]):
     deps = payload.get('deps', [])
     
     if runtime == 'python':
-        from deps import list_python_deps, detect_conflicts, install_python_deps
+        from src.utils.deps import list_python_deps, detect_conflicts, install_python_deps
         conflicts = detect_conflicts(list_python_deps(), deps)
         log, status = install_python_deps(deps)
         return {"status": "success" if status == 1 else "error", "conflicts": conflicts, "log": log}
     elif runtime == 'js' or runtime == 'javascript':
-        from deps import install_node_deps
+        from src.utils.deps import install_node_deps
         log, status = install_node_deps(deps)
         return {"status": "success" if status == 1 else "error", "log": log}
     
@@ -771,7 +771,7 @@ def api_get_config_file_deps(runtime: str = Query('python', regex="^(python|js|j
         if not os.path.exists(req_file):
             return {"runtime": "python", "deps": []}
         
-        from deps import parse_requirements_text
+        from src.utils.deps import parse_requirements_text
         with open(req_file, 'r', encoding='utf-8') as f:
             content = f.read()
         deps = parse_requirements_text(content)
@@ -782,7 +782,7 @@ def api_get_config_file_deps(runtime: str = Query('python', regex="^(python|js|j
         if not os.path.exists(pkg_file):
             return {"runtime": runtime, "deps": []}
         
-        from deps import parse_package_json
+        from src.utils.deps import parse_package_json
         with open(pkg_file, 'r', encoding='utf-8') as f:
             content = f.read()
         deps = parse_package_json(content)
@@ -1032,7 +1032,7 @@ def api_temp_files_set_interval(interval_hours: float = Form(...)):
 @app.get("/api/file-access/patterns")
 def api_file_access_patterns():
     """获取文件访问限制模式"""
-    from file_access_checker import FileAccessChecker
+    from src.utils.file_access_checker import FileAccessChecker
     checker = FileAccessChecker()
     return {
         "patterns": checker.get_allowed_patterns()
