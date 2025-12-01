@@ -132,9 +132,14 @@ class MediaProcessingMiddleware:
         @handle_script_errors
         def wrapped_execution():
             # 处理音视频参数
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"DEBUG: http_params = {http_params}")
+            logger.info(f"DEBUG: args_schema keys = {list(args_schema.keys())}")
             processed_params, processing_info = self.process_script_params(
                 script, args_schema, http_params
             )
+            logger.info(f"DEBUG: processed_params keys = {list(processed_params.keys())}")
             
             # 执行脚本
             result = execute_func(script, args_schema, processed_params)

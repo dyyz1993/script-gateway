@@ -31,9 +31,93 @@
         .danger { background: #ff4d4f; color: white; border-color: #ff4d4f; }
         .danger:hover { background: #ff7875; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        th { background: #fafafa; font-weight: 600; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        th { background: #fafafa; font-weight: 600; white-space: nowrap; }
         tr:hover { background: #fafafa; }
+        
+        /* 表格列宽限制 - 响应式设计 */
+        .filename-col { min-width: 160px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .alias-col { min-width: 100px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .date-col { min-width: 80px; max-width: 100px; }
+        .status-col { min-width: 60px; max-width: 80px; white-space: nowrap; }
+        .run-count-col { min-width: 50px; max-width: 60px; text-align: center; white-space: nowrap; }
+        .last-run-col { min-width: 120px; max-width: 180px; }
+        .action-cell { min-width: 300px; max-width: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* 响应式断点 */
+        @media (max-width: 1400px) {
+            .filename-col { max-width: 160px; }
+            .alias-col { max-width: 100px; }
+            .date-col { max-width: 90px; }
+            .status-col { max-width: 60px; }
+            .run-count-col { max-width: 45px; }
+            .last-run-col { max-width: 140px; }
+            .action-cell { min-width: 280px; }
+            .action-cell button { min-width: 50px; max-width: 80px; font-size: 10px; padding: 3px 6px; }
+        }
+        
+        @media (max-width: 1200px) {
+            .filename-col { max-width: 140px; }
+            .alias-col { max-width: 90px; }
+            .date-col { max-width: 80px; }
+            .status-col { max-width: 50px; }
+            .run-count-col { max-width: 40px; }
+            .last-run-col { max-width: 120px; }
+            .action-cell { min-width: 280px; }
+        }
+        
+        @media (max-width: 768px) {
+            .date-group .created { font-size: 10px; }
+            .date-group .updated { display: none; }
+            .action-cell { min-width: 240px; }
+        }
+        
+        /* 表格滚动优化 */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+        .table-container table {
+            width: 100%;
+            min-width: 1200px;
+        }
+        
+        /* 确保表格宽度与容器一致 */
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 1400px) {
+            .container {
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                padding: 10px;
+            }
+            .table-container table {
+                min-width: 1000px;
+            }
+        }
+        
+        /* 日期合并样式 */
+        .date-group {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .date-group .created {
+            color: #666;
+            margin-bottom: 2px;
+        }
+        .date-group .updated {
+            color: #999;
+            font-size: 11px;
+        }
         .status-success { color: #52c41a; }
         .status-fail { color: #ff4d4f; }
         .status-pending { color: #faad14; }
@@ -59,10 +143,315 @@
         .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: #fff; border-radius: 4px; }
         .pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; border-radius: 4px; }
         .pagination button:hover { background: #f0f0f0; }
+        
+        /* 优化按钮容器和操作列样式 */
+        .action-cell {
+            min-width: 400px;
+            max-width: 500px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .action-cell .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            align-items: center;
+            max-height: 60px;
+            overflow: hidden;
+        }
+        .action-cell button {
+            padding: 2px 5px;
+            font-size: 10px;
+            line-height: 1.2;
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 35px;
+            max-width: 50px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .action-cell button.btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        .action-cell button.btn-success {
+            background: #52c41a;
+            color: white;
+            border-color: #52c41a;
+        }
+        .action-cell button.btn-info {
+            background: #13c2c2;
+            color: white;
+            border-color: #13c2c2;
+        }
+        .action-cell button.btn-secondary {
+            background: #8c8c8c;
+            color: white;
+            border-color: #8c8c8c;
+        }
+        .action-cell button.btn-danger {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+        .action-cell button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 8px; min-width: 500px; max-width: 80%; max-height: 80%; overflow: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-close { cursor: pointer; font-size: 24px; }
+        .modal-content { position: relative; background: #fff; padding: 20px; border-radius: 8px; min-width: 500px; max-width: 80%; max-height: 80vh; margin: 50px auto; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+        .modal-close { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 24px; color: #999; background: #fff; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; z-index: 1001; flex-shrink: 0; }
+        .modal-close:hover { color: #333; background: #f5f5f5; }
+        .modal-body { flex: 1; overflow-y: auto; }
+        
+        /* 组件化表单样式 */
+        .form-field {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-field.required label::after {
+            content: ' *';
+            color: #ff4d4f;
+        }
+        .form-field .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        /* 开关组件 */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #1890ff;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* 多选框组 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .checkbox-item:hover {
+            border-color: #1890ff;
+            background: #f0f8ff;
+        }
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        /* 文件上传区域 */
+        .file-upload-area {
+            border: 2px dashed #d9d9d9;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        .file-upload-area:hover {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        .file-upload-area.drag-over {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        .file-upload-area .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .file-upload-area .upload-text {
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .file-upload-area .upload-hint {
+            font-size: 12px;
+            color: #999;
+        }
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        .file-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* URL输入区域 */
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+        .url-input-group input[type="text"] {
+            flex: 1;
+        }
+        .url-input-group .btn {
+            flex-shrink: 0;
+        }
+        
+        /* 定制化确认对话框 */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-dialog {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: confirmFadeIn 0.2s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes confirmFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .confirm-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+        .confirm-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        .confirm-body {
+            padding: 20px;
+            color: #666;
+            line-height: 1.5;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        .confirm-footer {
+            padding: 15px 20px 20px 20px;
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background: #fafafa;
+            border-top: 1px solid #f0f0f0;
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+        .confirm-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        .confirm-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .confirm-btn.confirm {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        .confirm-btn.confirm:hover {
+            background: #40a9ff;
+        }
+        .confirm-btn.danger {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+        .confirm-btn.danger:hover {
+            background: #ff7875;
+        }
+        .confirm-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .confirm-warning { color: #faad14; }
+        .confirm-error { color: #ff4d4f; }
+        .confirm-info { color: #1890ff; }
+        .confirm-success { color: #52c41a; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px; }
@@ -136,23 +525,24 @@
             <button class="danger" onclick="batchDelete()" id="batchDelBtn" disabled>批量删除</button>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAll"></th>
-                    <th>文件名</th>
-                    <th>备注</th>
-                    <th>创建日期</th>
-                    <th>更新日期</th>
-                    <th>加载状态</th>
-                    <th>调用次数</th>
-                    <th>上次执行</th>
-                    <th>通知</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="scriptList"></tbody>
-        </table>
+        <div class="table-container">
+            <table style="table-layout: fixed; width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 40px; min-width: 40px;"><input type="checkbox" id="selectAll"></th>
+                        <th style="width: 18%; min-width: 160px; max-width: 200px;">文件名</th>
+                        <th style="width: 22%; min-width: 160px;">备注</th>
+                        <th style="width: 10%; min-width: 80px; max-width: 100px;">日期</th>
+                        <th style="width: 7%; min-width: 60px; max-width: 80px;">状态</th>
+                        <th style="width: 5%; min-width: 50px; max-width: 60px;">调用次数</th>
+                        <th style="width: 13%; min-width: 120px; max-width: 180px;">上次执行</th>
+                        <th style="width: 5%; min-width: 50px; max-width: 60px;">通知</th>
+                        <th style="width: 20%; min-width: 380px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="scriptList"></tbody>
+            </table>
+        </div>
 
         <div class="pagination">
             <div>共 <span id="total">0</span> 条</div>
@@ -169,14 +559,16 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>调试脚本</h3>
-                <span class="modal-close" onclick="closeDebugModal()">&times;</span>
             </div>
-            <div id="debugForm"></div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn" id="runDebugBtn" onclick="runDebug()">执行</button>
-                <button class="btn-primary" onclick="copyDebugCurl()">复制 cURL</button>
+            <span class="modal-close" onclick="closeDebugModal()">&times;</span>
+            <div class="modal-body">
+                <div id="debugForm"></div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn" id="runDebugBtn" onclick="runDebug()">执行</button>
+                    <button class="btn-primary" onclick="copyDebugCurl()">复制 cURL</button>
+                </div>
+                <div id="debugResult" style="margin-top: 20px;"></div>
             </div>
-            <div id="debugResult" style="margin-top: 20px;"></div>
         </div>
     </div>
 
@@ -185,50 +577,52 @@
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <h3>新建脚本</h3>
-                <span class="modal-close" onclick="closeCreateModal()">&times;</span>
             </div>
-            <div class="tabs" style="margin-bottom: 10px;">
-                <button class="tab active" id="tabUpload" onclick="switchCreateTab('upload')">拖拽/上传</button>
-                <button class="tab" id="tabPaste" onclick="switchCreateTab('paste')">粘贴内容</button>
-            </div>
-            <div id="createUploadPane">
-                <div class="form-group">
-                    <label>选择文件</label>
-                    <div id="dropZone" style="border: 2px dashed #d9d9d9; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; background: #fafafa; transition: all 0.3s;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
-                        <div style="font-size: 16px; color: #666; margin-bottom: 5px;">拖拽文件到此处</div>
-                        <div style="font-size: 14px; color: #999;">或点击选择文件</div>
-                        <input type="file" id="fileInput" multiple style="display: none;">
+            <span class="modal-close" onclick="closeCreateModal()">&times;</span>
+            <div class="modal-body">
+                <div class="tabs" style="margin-bottom: 10px;">
+                    <button class="tab active" id="tabUpload" onclick="switchCreateTab('upload')">拖拽/上传</button>
+                    <button class="tab" id="tabPaste" onclick="switchCreateTab('paste')">粘贴内容</button>
+                </div>
+                <div id="createUploadPane">
+                    <div class="form-group">
+                        <label>选择文件</label>
+                        <div id="dropZone" style="border: 2px dashed #d9d9d9; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; background: #fafafa; transition: all 0.3s;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+                            <div style="font-size: 16px; color: #666; margin-bottom: 5px;">拖拽文件到此处</div>
+                            <div style="font-size: 14px; color: #999;">或点击选择文件</div>
+                            <input type="file" id="fileInput" multiple style="display: none;">
+                        </div>
+                        <div id="selectedFiles" style="margin-top: 10px; font-size: 13px; color: #666;"></div>
+                        <div class="help-text">支持多文件上传，文件将根据扩展名自动识别类型</div>
                     </div>
-                    <div id="selectedFiles" style="margin-top: 10px; font-size: 13px; color: #666;"></div>
-                    <div class="help-text">支持多文件上传，文件将根据扩展名自动识别类型</div>
+                    <div class="form-group">
+                        <button class="btn success" onclick="submitUpload()">上传并创建</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <button class="btn success" onclick="submitUpload()">上传并创建</button>
-                </div>
-            </div>
-            <div id="createPastePane" style="display: none;">
-                <div class="form-group">
-                    <label>运行时</label>
-                    <select id="pasteRuntime">
-                        <option value="python">Python</option>
-                        <option value="js">JavaScript</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>文件名</label>
-                    <input type="text" id="pasteFilename" placeholder="如 hello.py 或 hello.js">
-                </div>
-                <div class="form-group">
-                    <label>备注（可选）</label>
-                    <input type="text" id="pasteAlias" placeholder="备注名称">
-                </div>
-                <div class="form-group">
-                    <label>内容</label>
-                    <textarea id="pasteContent" style="min-height: 180px;"></textarea>
-                </div>
-                <div class="form-group">
-                    <button class="btn success" onclick="submitPaste()">创建</button>
+                <div id="createPastePane" style="display: none;">
+                    <div class="form-group">
+                        <label>运行时</label>
+                        <select id="pasteRuntime">
+                            <option value="python">Python</option>
+                            <option value="js">JavaScript</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>文件名</label>
+                        <input type="text" id="pasteFilename" placeholder="如 hello.py 或 hello.js">
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <input type="text" id="pasteAlias" placeholder="备注名称">
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="pasteContent" style="min-height: 180px;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn success" onclick="submitPaste()">创建</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -239,19 +633,21 @@
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h3>脚本日志</h3>
-                <span class="modal-close" onclick="closeLogsModal()">&times;</span>
             </div>
-            <div style="margin-bottom: 15px;">
-                <button class="btn" onclick="refreshLogs()">刷新</button>
-                <button class="btn success" onclick="copyLogs()">复制日志</button>
-                <button class="btn success" onclick="downloadLogs()">下载日志</button>
-            </div>
-            <div id="logsContent" style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">
-                <pre id="logsText" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
-            </div>
-            <div id="logsFiles" style="margin-top: 15px;">
-                <h4>历史日志文件</h4>
-                <ul id="logsFilesList" style="list-style: none; padding: 0;"></ul>
+            <span class="modal-close" onclick="closeLogsModal()">&times;</span>
+            <div class="modal-body">
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="refreshLogs()">刷新</button>
+                    <button class="btn success" onclick="copyLogs()">复制日志</button>
+                    <button class="btn success" onclick="downloadLogs()">下载日志</button>
+                </div>
+                <div id="logsContent" style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">
+                    <pre id="logsText" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                </div>
+                <div id="logsFiles" style="margin-top: 15px;">
+                    <h4>历史日志文件</h4>
+                    <ul id="logsFilesList" style="list-style: none; padding: 0;"></ul>
+                </div>
             </div>
         </div>
     </div>
@@ -261,23 +657,25 @@
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h3>编辑脚本</h3>
-                <span class="modal-close" onclick="closeEditModal()">&times;</span>
             </div>
-            <div class="form-group">
-                <label>文件名</label>
-                <input type="text" id="editFilename" readonly style="background: #f5f5f5;">
-            </div>
-            <div class="form-group">
-                <label>备注</label>
-                <input type="text" id="editAlias" placeholder="备注名称">
-            </div>
-            <div class="form-group">
-                <label>内容</label>
-                <textarea id="editContent" style="min-height: 400px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 13px;"></textarea>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-success" onclick="saveEdit()">保存</button>
-                <button class="btn" onclick="closeEditModal()">取消</button>
+            <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>文件名</label>
+                    <input type="text" id="editFilename" readonly style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <input type="text" id="editAlias" placeholder="备注名称">
+                </div>
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea id="editContent" style="min-height: 400px; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 13px;"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-success" onclick="saveEdit()">保存</button>
+                    <button class="btn" onclick="closeEditModal()">取消</button>
+                </div>
             </div>
         </div>
     </div>
@@ -384,8 +782,22 @@
                     (item.status_last_run === 0 ? '未执行' : 
                      item.status_last_run === 1 ? '成功' : '失败');
                 
-                const durationText = (!isRunning && item.last_duration_ms) ? 
-                    ` (${formatDuration(item.last_duration_ms)})` : '';
+                // 显示执行耗时：成功执行的脚本显示上一次耗时和平均耗时
+                let durationText = '';
+                if (item.status_last_run === 1) {
+                    const lastDuration = item.last_duration_ms ? formatDuration(item.last_duration_ms) : null;
+                    const avgDuration = item.avg_duration_ms ? formatDuration(item.avg_duration_ms) : null;
+                    
+                    if (lastDuration && avgDuration) {
+                        durationText = ` (上次: ${lastDuration}, 平均: ${avgDuration})`;
+                    } else if (lastDuration) {
+                        durationText = ` (上次: ${lastDuration})`;
+                    } else if (avgDuration) {
+                        durationText = ` (平均: ${avgDuration})`;
+                    } else {
+                        durationText = ' (无耗时数据)';
+                    }
+                }
                 
                 // 格式化上次执行时间：显示日期 + 时间
                 const lastRunTime = item.last_run_at ? 
@@ -401,33 +813,59 @@
                 // 调用次数
                 const runCount = item.run_count || 0;
                 
+                // 格式化合并的日期
+                let dateHtml = '-';
+                if (item.created_at || item.updated_at) {
+                    const createdDate = item.created_at ? new Date(item.created_at).toLocaleString('zh-CN', {month: '2-digit', day: '2-digit'}) : '-';
+                    const updatedDate = item.updated_at ? new Date(item.updated_at).toLocaleString('zh-CN', {month: '2-digit', day: '2-digit'}) : '-';
+                    
+                    if (createdDate !== '-' || updatedDate !== '-') {
+                        dateHtml = '<div class="date-group">';
+                        if (createdDate !== '-') {
+                            dateHtml += `<div class="created">创建: ${createdDate}</div>`;
+                        }
+                        if (updatedDate !== '-' && updatedDate !== createdDate) {
+                            dateHtml += `<div class="updated">更新: ${updatedDate}</div>`;
+                        }
+                        dateHtml += '</div>';
+                    }
+                }
+                
+                // 格式化上次执行时间，显示更紧凑
+                let lastRunHtml = lastRunDisplay;
+                if (lastRunTime) {
+                    const runDate = new Date(lastRunTime).toLocaleString('zh-CN', {month: '2-digit', day: '2-digit'});
+                    const runTime = new Date(lastRunTime).toLocaleString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+                    lastRunHtml = `${lastRunDisplay}<br><small style="color: #666;">${runDate} ${runTime}</small>`;
+                }
+                
                 tr.innerHTML = `
                     <td><input type="checkbox" class="row-select" value="${item.id}" onchange="updateBatchBtn()"></td>
-                    <td>${item.filename}</td>
-                    <td class="editable-cell" data-script-id="${item.id}" ondblclick="editAlias(${item.id}, this)">${item.alias_name || '-'}</td>
-                    <td>${item.created_at ? new Date(item.created_at).toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit'}) : '-'}</td>
-                    <td>${item.updated_at ? new Date(item.updated_at).toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit'}) : '-'}</td>
-                    <td>${loadStatus}</td>
-                    <td><span style="color: #1890ff; font-weight: bold;">${runCount}</span></td>
-                    <td class="${item.status_last_run === 1 ? 'status-success' : item.status_last_run === 2 ? 'status-fail' : 'status-pending'}" title="${lastRunTime}">
-                        ${lastRunDisplay}${durationText}
-                        ${lastRunTime ? `<br><small style="color: #666;">${lastRunTime}</small>` : ''}
+                    <td class="filename-col" title="${item.filename}">${item.filename}</td>
+                    <td class="editable-cell alias-col" data-script-id="${item.id}" ondblclick="editAlias(${item.id}, this)">${item.alias_name || '-'}</td>
+                    <td class="date-col">${dateHtml}</td>
+                    <td class="status-col">${loadStatus}</td>
+                    <td class="run-count-col"><span style="color: #1890ff; font-weight: bold;">${runCount}</span></td>
+                    <td class="last-run-col ${item.status_last_run === 1 ? 'status-success' : item.status_last_run === 2 ? 'status-fail' : 'status-pending'}" title="${lastRunTime}">
+                        ${lastRunHtml}${durationText ? `<small style="color: #666;">${durationText}</small>` : ''}
                     </td>
-                    <td>
+                    <td style="text-align: center;">
                         <label class="switch">
                             <input type="checkbox" ${item.notify_enabled == 1 ? 'checked' : ''} onchange="toggleNotify(${item.id}, this.checked)">
                             <span class="slider"></span>
                         </label>
                     </td>
-                    <td>
-                        <button class="btn-primary" onclick="copyCurl(${item.id})">复制cURL</button>
-                        <button class="btn-success" onclick="openDebugModal(${item.id})">调试</button>
-                        <button class="btn-info" onclick="editScript(${item.id})">编辑</button>
-                        <button class="btn-secondary" onclick="viewLogs(${item.id})">日志</button>
-                        ${isRunning ? 
-                            `<button class="btn-danger" id="terminate-${item.id}" onclick="terminateScript(${item.id})">中止</button>` : 
-                            ''}
-                        <button class="btn-danger" onclick="deleteScript(${item.id})">删除</button>
+                    <td class="action-cell">
+                        <div class="btn-group">
+                            <button class="btn-primary" onclick="copyCurl(${item.id})">复制</button>
+                            <button class="btn-success" onclick="openDebugModal(${item.id})">调试</button>
+                            <button class="btn-info" onclick="editScript(${item.id})">编辑</button>
+                            <button class="btn-secondary" onclick="viewLogs(${item.id})">日志</button>
+                            ${isRunning ? 
+                                `<button class="btn-danger" id="terminate-${item.id}" onclick="terminateScript(${item.id})">中止</button>` : 
+                                ''}
+                            <button class="btn-danger" onclick="deleteScript(${item.id})">删除</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -615,20 +1053,259 @@
                     </div>
                 `;
             } else {
+                // 使用组件化表单
                 for (const [key, meta] of Object.entries(argsSchema)) {
-                    const div = document.createElement('div');
-                    div.className = 'form-group';
-                    div.innerHTML = `
-                        <label>${meta.help || key}${meta.required ? ' *' : ''}</label>
-                        ${meta.type === 'file' ? 
-                            `<input type="file" id="debug_${key}" ${meta.required ? 'required' : ''}>` : 
-                            `<input type="text" id="debug_${key}" placeholder="${meta.help || key}" ${meta.required ? 'required' : ''}>`}
-                    `;
-                    form.appendChild(div);
+                    const field = createFormField(key, meta);
+                    form.appendChild(field);
                 }
             }
             
             document.getElementById('debugModal').style.display = 'block';
+        }
+        
+        // 创建表单字段组件
+        function createFormField(key, meta) {
+            const field = document.createElement('div');
+            field.className = `form-field ${meta.required ? 'required' : ''}`;
+            
+            const label = document.createElement('label');
+            label.textContent = meta.help || key;
+            field.appendChild(label);
+            
+            // 添加帮助文本
+            if (meta.help) {
+                const helpText = document.createElement('div');
+                helpText.className = 'help-text';
+                helpText.textContent = `参数标识: ${meta.flag}`;
+                field.appendChild(helpText);
+            }
+            
+            // 根据类型创建不同的输入组件
+            let inputElement;
+            switch (meta.type) {
+                case 'bool':
+                    inputElement = createToggleSwitch(key, meta);
+                    break;
+                case 'select':
+                    inputElement = createSelectInput(key, meta);
+                    break;
+                case 'multi':
+                    inputElement = createMultiSelectInput(key, meta);
+                    break;
+                case 'file':
+                    inputElement = createFileUploadInput(key, meta);
+                    break;
+                default:
+                    inputElement = createTextInput(key, meta);
+            }
+            
+            field.appendChild(inputElement);
+            return field;
+        }
+        
+        // 创建开关组件
+        function createToggleSwitch(key, meta) {
+            const container = document.createElement('div');
+            // 根据默认值设置checked状态
+            const isChecked = meta.default === true ? 'checked' : '';
+            container.innerHTML = `
+                <label class="toggle-switch">
+                    <input type="checkbox" id="debug_${key}" ${isChecked}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span style="margin-left: 10px; color: #666;">关闭/开启</span>
+            `;
+            return container;
+        }
+        
+        // 创建下拉选择器
+        function createSelectInput(key, meta) {
+            const select = document.createElement('select');
+            select.id = `debug_${key}`;
+            select.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;';
+            
+            // 尝试从 help 文本中提取选项，格式如: "选项1|选项2|选项3"
+            const helpText = meta.help || '';
+            if (helpText.includes('|')) {
+                const options = helpText.split('|').map(opt => opt.trim());
+                options.forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    select.appendChild(optionEl);
+                });
+            } else {
+                // 默认选项
+                const defaultOptions = ['选项1', '选项2', '选项3'];
+                defaultOptions.forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    select.appendChild(optionEl);
+                });
+            }
+            
+            return select;
+        }
+        
+        // 创建多选框组
+        function createMultiSelectInput(key, meta) {
+            const container = document.createElement('div');
+            container.className = 'checkbox-group';
+            
+            // 尝试从 help 文本中提取选项
+            const helpText = meta.help || '';
+            let options = ['选项1', '选项2', '选项3'];
+            
+            if (helpText.includes('|')) {
+                options = helpText.split('|').map(opt => opt.trim());
+            }
+            
+            options.forEach((option, index) => {
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                item.innerHTML = `
+                    <input type="checkbox" id="debug_${key}_${index}" value="${option}">
+                    <label for="debug_${key}_${index}" style="margin: 0; cursor: pointer;">${option}</label>
+                `;
+                container.appendChild(item);
+            });
+            
+            return container;
+        }
+        
+        // 创建文件上传组件
+        function createFileUploadInput(key, meta) {
+            const container = document.createElement('div');
+            
+            const uploadArea = document.createElement('div');
+            uploadArea.className = 'file-upload-area';
+            uploadArea.innerHTML = `
+                <span class="upload-icon">📁</span>
+                <div class="upload-text">点击选择文件或拖拽到此处</div>
+                <div class="upload-hint">支持任何文件类型</div>
+                <input type="file" id="debug_${key}" ${meta.required ? 'required' : ''}>
+            `;
+            
+            // URL输入区域
+            const urlGroup = document.createElement('div');
+            urlGroup.className = 'url-input-group';
+            urlGroup.style.marginTop = '10px';
+            urlGroup.innerHTML = `
+                <input type="text" id="debug_${key}_url" placeholder="或输入文件URL">
+                <button class="btn" type="button" onclick="loadFileFromUrl('${key}')">加载URL</button>
+            `;
+            
+            container.appendChild(uploadArea);
+            container.appendChild(urlGroup);
+            
+            // 文件预览区域
+            const preview = document.createElement('div');
+            preview.id = `debug_${key}_preview`;
+            preview.className = 'file-preview';
+            preview.style.display = 'none';
+            container.appendChild(preview);
+            
+            // 绑定拖拽事件
+            setupFileUploadEvents(uploadArea, key);
+            
+            return container;
+        }
+        
+        // 设置文件上传事件
+        function setupFileUploadEvents(uploadArea, key) {
+            const fileInput = uploadArea.querySelector('input[type="file"]');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    showFilePreview(key, files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    showFilePreview(key, fileInput.files[0]);
+                }
+            });
+        }
+        
+        // 显示文件预览
+        function showFilePreview(key, file) {
+            const preview = document.getElementById(`debug_${key}_preview`);
+            if (preview) {
+                preview.style.display = 'block';
+                preview.innerHTML = `
+                    <strong>已选择文件:</strong> ${file.name} 
+                    <span style="color: #999;">(${(file.size / 1024).toFixed(2)} KB)</span>
+                `;
+            }
+        }
+        
+        // 从URL加载文件
+        async function loadFileFromUrl(key) {
+            const urlInput = document.getElementById(`debug_${key}_url`);
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('请输入文件URL');
+                return;
+            }
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('无法访问URL');
+                
+                const blob = await response.blob();
+                const fileName = url.split('/').pop() || 'downloaded_file';
+                const file = new File([blob], fileName);
+                
+                // 创建文件输入并设置文件
+                const fileInput = document.getElementById(`debug_${key}`);
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                showFilePreview(key, file);
+                urlInput.value = '';
+            } catch (error) {
+                alert('加载URL文件失败: ' + error.message);
+            }
+        }
+        
+        // 创建文本输入
+        function createTextInput(key, meta) {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `debug_${key}`;
+            // 对于必填字段，如果没有填写值，则使用help作为占位符
+            if (meta.required && !meta.default) {
+                input.placeholder = meta.help || key;
+            } else {
+                input.placeholder = meta.help || key;
+            }
+            input.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #d9d9d9; border-radius: 4px;';
+            if (meta.required) input.required = true;
+            // 设置默认值
+            if (meta.default !== undefined) {
+                input.value = meta.default;
+            }
+            return input;
         }
 
         function closeDebugModal() {
@@ -651,39 +1328,96 @@
             let hasFile = false;
             
             for (const key of Object.keys(argsSchema)) {
-                const input = document.getElementById(`debug_${key}`);
-                if (!input) continue;
+                const meta = argsSchema[key];
+                let value;
                 
-                if (input.type === 'file') {
-                    if (input.files.length > 0) {
-                        hasFile = true;
-                        params[key] = `<文件: ${input.files[0].name}>`;
-                    }
-                } else if (input.value) {
-                    params[key] = input.value;
+                switch (meta.type) {
+                    case 'bool':
+                        const checkbox = document.getElementById(`debug_${key}`);
+                        value = checkbox.checked;
+                        // 如果没有默认值，则使用当前值
+                        if (meta.default === undefined) {
+                            params[key] = value;
+                        } else {
+                            // 如果有默认值，只有当值与默认值不同时才添加到参数中
+                            if (value !== meta.default) {
+                                params[key] = value;
+                            }
+                        }
+                        break;
+                    case 'multi':
+                        value = [];
+                        const checkboxes = document.querySelectorAll(`[id^="debug_${key}_"]:checked`);
+                        checkboxes.forEach(cb => {
+                            value.push(cb.value);
+                        });
+                        value = value.join(',');
+                        if (value) {
+                            params[key] = value;
+                        }
+                        break;
+                    case 'file':
+                        const fileInput = document.getElementById(`debug_${key}`);
+                        if (fileInput.files.length > 0) {
+                            hasFile = true;
+                            params[key] = `<文件: ${fileInput.files[0].name}>`;
+                        }
+                        continue; // 跳过后续的 params[key] 赋值
+                    default:
+                        const input = document.getElementById(`debug_${key}`);
+                        if (input) {
+                            value = input.value;
+                            // 如果有默认值，只有当值与默认值不同时才添加到参数中
+                            if (meta.default === undefined) {
+                                if (value) {
+                                    params[key] = value;
+                                }
+                            } else {
+                                if (value !== meta.default) {
+                                    params[key] = value;
+                                }
+                            }
+                        }
                 }
             }
             
             // 获取当前域名和端口
             const baseUrl = `${window.location.protocol}//${window.location.host}`;
             
+            // 生成包含所有参数的完整参数对象
+            const allParams = {};
+            
+            // 首先添加所有参数的默认值
+            for (const key of Object.keys(argsSchema)) {
+                const meta = argsSchema[key];
+                if (meta.default !== undefined) {
+                    allParams[key] = meta.default;
+                }
+            }
+            
+            // 然后覆盖用户修改的参数值
+            for (const [key, value] of Object.entries(params)) {
+                allParams[key] = value;
+            }
+            
             // 生成 cURL 命令
             let curl;
             if (hasFile) {
                 // 有文件上传，生成 multipart/form-data 格式
                 curl = `curl -X POST ${baseUrl}/api/scripts/${currentScriptId}/run`;
-                for (const [key, value] of Object.entries(params)) {
-                    if (value.startsWith('<文件:')) {
+                for (const [key, value] of Object.entries(allParams)) {
+                    const valueStr = String(value);
+                    if (valueStr.startsWith('<文件:')) {
                         curl += ` \\
-  -F "${key}=@/path/to/${value.replace('<文件: ', '').replace('>', '')}"`;
+  -F "${key}=@/path/to/${valueStr.replace('<文件: ', '').replace('>', '')}"`;
                     } else {
                         curl += ` \\
-  -F "${key}=${value}"`;
+  -F "${key}=${valueStr}"`;
                     }
                 }
             } else {
                 // 普通 JSON 请求
-                const jsonData = JSON.stringify(params, null, 2);
+                const jsonData = JSON.stringify(allParams, null, 2);
                 curl = `curl -X POST ${baseUrl}/api/scripts/${currentScriptId}/run \\
   -H "Content-Type: application/json" \\
   -d '${jsonData}'`;
@@ -739,13 +1473,38 @@
             let hasFile = false;
             
             for (const key of Object.keys(argsSchema)) {
-                const input = document.getElementById(`debug_${key}`);
-                if (!input) continue;
-                if (input.type === 'file' && input.files.length > 0) {
-                    formData.append(key, input.files[0]);
-                    hasFile = true;
-                } else if (input.value) {
-                    formData.append(key, input.value);
+                const meta = argsSchema[key];
+                let value;
+                
+                switch (meta.type) {
+                    case 'bool':
+                        const checkbox = document.getElementById(`debug_${key}`);
+                        value = checkbox.checked;
+                        break;
+                    case 'multi':
+                        value = [];
+                        const checkboxes = document.querySelectorAll(`[id^="debug_${key}_"]:checked`);
+                        checkboxes.forEach(cb => {
+                            value.push(cb.value);
+                        });
+                        value = value.join(',');
+                        break;
+                    case 'file':
+                        const fileInput = document.getElementById(`debug_${key}`);
+                        if (fileInput.files.length > 0) {
+                            formData.append(key, fileInput.files[0]);
+                            hasFile = true;
+                        }
+                        continue; // 跳过后续的 formData.append
+                    default:
+                        const input = document.getElementById(`debug_${key}`);
+                        if (input && input.value) {
+                            value = input.value;
+                        }
+                }
+                
+                if (value !== undefined && value !== '') {
+                    formData.append(key, value);
                 }
             }
             
@@ -806,7 +1565,12 @@
         }
 
         async function deleteScript(id) {
-            if (!confirm('确定删除？物理文件也将被删除！')) return;
+            if (!await confirm('确定删除？物理文件也将被删除！', { 
+                type: 'error', 
+                confirmButtonType: 'danger',
+                confirmText: '删除',
+                title: '删除脚本'
+            })) return;
             const res = await fetch(`/api/scripts/${id}?delete_file=true`, { method: 'DELETE' });
             if (res.ok) loadScripts();
         }
@@ -814,7 +1578,12 @@
         async function batchDelete() {
             const selected = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.value);
             if (selected.length === 0) return;
-            if (!confirm(`确定删除 ${selected.length} 个脚本？物理文件也将被删除！`)) return;
+            if (!await confirm(`确定删除 ${selected.length} 个脚本？物理文件也将被删除！`, { 
+                type: 'error', 
+                confirmButtonType: 'danger',
+                confirmText: '删除',
+                title: '批量删除脚本'
+            })) return;
             
             for (const id of selected) {
                 await fetch(`/api/scripts/${id}?delete_file=true`, { method: 'DELETE' });
@@ -897,7 +1666,12 @@
         }
 
         async function terminateScript(id) {
-            if (!confirm('确定中止该脚本？')) return;
+            if (!await confirm('确定中止该脚本？', { 
+                type: 'warning', 
+                confirmButtonType: 'danger',
+                confirmText: '中止',
+                title: '中止脚本执行'
+            })) return;
             const res = await fetch(`/api/scripts/${id}/terminate`, { method: 'POST' });
             const data = await res.json();
             if (data.status === 'success') {
@@ -1126,6 +1900,112 @@
                 selectedFilesDiv.innerHTML = `已选择 ${files.length} 个文件: ${fileNames}`;
             }
         }
+    </script>
+
+    <!-- 定制化确认对话框 -->
+    <div id="confirmOverlay" class="confirm-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-header">
+                <h4 class="confirm-title" id="confirmTitle">确认操作</h4>
+            </div>
+            <div class="confirm-body" id="confirmBody">
+                确定要执行此操作吗？
+            </div>
+            <div class="confirm-footer">
+                <button class="confirm-btn" id="confirmCancel">取消</button>
+                <button class="confirm-btn confirm" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定制化确认对话框
+        class ConfirmDialog {
+            constructor() {
+                this.overlay = document.getElementById('confirmOverlay');
+                this.title = document.getElementById('confirmTitle');
+                this.body = document.getElementById('confirmBody');
+                this.cancelBtn = document.getElementById('confirmCancel');
+                this.okBtn = document.getElementById('confirmOk');
+                this.currentResolve = null;
+                
+                this.initEvents();
+            }
+            
+            initEvents() {
+                this.cancelBtn.addEventListener('click', () => this.hide(false));
+                this.okBtn.addEventListener('click', () => this.hide(true));
+                this.overlay.addEventListener('click', (e) => {
+                    if (e.target === this.overlay) {
+                        this.hide(false);
+                    }
+                });
+                
+                // ESC 键关闭
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.overlay.style.display === 'flex') {
+                        this.hide(false);
+                    }
+                });
+            }
+            
+            show(options = {}) {
+                const {
+                    title = '确认操作',
+                    message = '确定要执行此操作吗？',
+                    type = 'warning', // warning, error, info, success
+                    confirmText = '确定',
+                    cancelText = '取消',
+                    confirmButtonType = 'confirm' // confirm, danger
+                } = options;
+                
+                // 设置图标
+                let icon = '';
+                switch (type) {
+                    case 'warning': icon = '<span class="confirm-icon confirm-warning">⚠️</span>'; break;
+                    case 'error': icon = '<span class="confirm-icon confirm-error">❌</span>'; break;
+                    case 'info': icon = '<span class="confirm-icon confirm-info">ℹ️</span>'; break;
+                    case 'success': icon = '<span class="confirm-icon confirm-success">✅</span>'; break;
+                }
+                
+                this.title.innerHTML = icon + title;
+                this.body.innerHTML = message.replace(/\n/g, '<br>');
+                this.cancelBtn.textContent = cancelText;
+                this.okBtn.textContent = confirmText;
+                
+                // 设置确认按钮类型
+                this.okBtn.className = `confirm-btn ${confirmButtonType}`;
+                
+                this.overlay.style.display = 'flex';
+                
+                return new Promise((resolve) => {
+                    this.currentResolve = resolve;
+                });
+            }
+            
+            hide(confirmed) {
+                this.overlay.style.display = 'none';
+                if (this.currentResolve) {
+                    this.currentResolve(confirmed);
+                    this.currentResolve = null;
+                }
+            }
+        }
+        
+        // 创建全局确认对话框实例
+        window.customConfirm = new ConfirmDialog();
+        
+        // 替换全局 confirm 函数
+        window.originalConfirm = window.confirm;
+        window.confirm = function(message, options = {}) {
+            return window.customConfirm.show({
+                message: message,
+                type: options.type || 'warning',
+                confirmText: options.confirmText || '确定',
+                cancelText: options.cancelText || '取消',
+                confirmButtonType: options.confirmButtonType || 'confirm'
+            });
+        };
     </script>
 </body>
 </html>

@@ -173,6 +173,10 @@ def list_scripts(
                 LIMIT 1
             ) AS last_duration_ms,
             (
+                SELECT AVG(r.duration_ms) FROM runs r
+                WHERE r.script_id = s.id AND r.duration_ms IS NOT NULL
+            ) AS avg_duration_ms,
+            (
                 SELECT COUNT(*) FROM runs r
                 WHERE r.script_id = s.id
             ) AS run_count,

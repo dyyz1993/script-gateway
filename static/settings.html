@@ -6,32 +6,120 @@
     <title>系统设置 - ScriptGateway</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; }
-        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         h1 { margin-bottom: 20px; }
-        .back-btn { padding: 8px 16px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-bottom: 20px; }
-        .back-btn:hover { background: #40a9ff; }
+        .back-btn { padding: 8px 16px; border: 1px solid #d9d9d9; background: #fff; color: #333; border-radius: 4px; cursor: pointer; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .back-btn:hover { background: #f0f0f0; border-color: #1890ff; color: #1890ff; }
         .card { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .card h3 { margin-bottom: 15px; border-bottom: 2px solid #1890ff; padding-bottom: 10px; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
         .form-group input, .form-group select { width: 100%; max-width: 400px; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; }
         .form-group .help-text { font-size: 12px; color: #999; margin-top: 5px; }
-        .btn { padding: 10px 20px; border: none; background: #1890ff; color: #fff; border-radius: 4px; cursor: pointer; margin-right: 10px; }
-        .btn:hover { background: #40a9ff; }
-        .btn.success { background: #52c41a; }
-        .btn.success:hover { background: #73d13d; }
-        .btn.danger { background: #ff4d4f; }
-        .btn.danger:hover { background: #ff7875; }
+        .btn { padding: 10px 20px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; border-radius: 4px; margin-right: 10px; color: #333; }
+        .btn:hover { background: #f0f0f0; }
+        .btn-primary { background: #1890ff; color: white; border-color: #1890ff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-success { background: #52c41a; color: white; border-color: #52c41a; }
+        .btn-success:hover { background: #73d13d; }
+        .btn-danger { background: #ff4d4f; color: white; border-color: #ff4d4f; }
+        .btn-danger:hover { background: #ff7875; }
         .readonly { background: #f5f5f5; color: #999; }
         .status-success { color: #52c41a; margin-left: 10px; }
         .status-fail { color: #ff4d4f; margin-left: 10px; }
+        
+        /* 定制化确认对话框 */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-dialog {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: confirmFadeIn 0.2s ease-out;
+        }
+        @keyframes confirmFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .confirm-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .confirm-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        .confirm-body {
+            padding: 20px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .confirm-footer {
+            padding: 10px 20px 20px 20px;
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .confirm-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            color: #333;
+        }
+        .confirm-btn:hover {
+            background: #f0f0f0;
+        }
+        .confirm-btn.confirm {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        .confirm-btn.confirm:hover {
+            background: #40a9ff;
+        }
+        .confirm-btn.danger {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+        .confirm-btn.danger:hover {
+            background: #ff7875;
+        }
+        .confirm-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .confirm-warning { color: #faad14; }
+        .confirm-error { color: #ff4d4f; }
+        .confirm-info { color: #1890ff; }
+        .confirm-success { color: #52c41a; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>系统设置</h1>
-        <button class="back-btn" onclick="window.location.href='/'">← 返回脚本列表</button>
+        <a href="/" class="back-btn">← 返回脚本列表</a>
 
         <div class="card">
             <h3>扫描配置</h3>
@@ -73,7 +161,7 @@
                 <input type="text" id="notifyUrl" placeholder="https://api.day.app/your_key/">
                 <div class="help-text">留空则禁用通知，支持Bark格式</div>
             </div>
-            <button class="btn success" onclick="testNotify()">测试通知</button>
+            <button class="btn btn-primary" onclick="testNotify()">测试通知</button>
         </div>
 
         <div class="card">
@@ -97,7 +185,7 @@
                 <input type="number" id="gatewayLogRetention" min="1" max="90" value="7">
                 <div class="help-text">范围：1-90天，默认7天</div>
             </div>
-            <button class="btn danger" onclick="cleanupLogs()">立即清理过期日志</button>
+            <button class="btn btn-danger" onclick="cleanupLogs()">立即清理过期日志</button>
         </div>
 
         <div class="card">
@@ -144,11 +232,11 @@
                 <label>Swagger文档地址</label>
                 <input type="text" value="/docs" class="readonly" readonly>
             </div>
-            <button class="btn" onclick="window.open('/docs', '_blank')">打开Swagger文档</button>
+            <button class="btn btn-primary" onclick="window.open('/docs', '_blank')">打开Swagger文档</button>
         </div>
 
         <div style="margin-top: 30px; text-align: center;">
-            <button class="btn success" onclick="saveSettings()">保存所有设置</button>
+            <button class="btn btn-success" onclick="saveSettings()">保存所有设置</button>
         </div>
     </div>
 
@@ -244,7 +332,12 @@
         }
 
         async function cleanupLogs() {
-            if (!confirm('确定清理过期日志？')) return;
+            if (!await confirm('确定清理过期日志？', { 
+                type: 'warning', 
+                confirmButtonType: 'danger',
+                confirmText: '清理',
+                title: '清理日志'
+            })) return;
 
             const res = await fetch('/api/logs/cleanup', { method: 'POST' });
             const data = await res.json();
@@ -257,6 +350,112 @@
         }
 
         loadSettings();
+    </script>
+
+    <!-- 定制化确认对话框 -->
+    <div id="confirmOverlay" class="confirm-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-header">
+                <h4 class="confirm-title" id="confirmTitle">确认操作</h4>
+            </div>
+            <div class="confirm-body" id="confirmBody">
+                确定要执行此操作吗？
+            </div>
+            <div class="confirm-footer">
+                <button class="confirm-btn" id="confirmCancel">取消</button>
+                <button class="confirm-btn confirm" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定制化确认对话框
+        class ConfirmDialog {
+            constructor() {
+                this.overlay = document.getElementById('confirmOverlay');
+                this.title = document.getElementById('confirmTitle');
+                this.body = document.getElementById('confirmBody');
+                this.cancelBtn = document.getElementById('confirmCancel');
+                this.okBtn = document.getElementById('confirmOk');
+                this.currentResolve = null;
+                
+                this.initEvents();
+            }
+            
+            initEvents() {
+                this.cancelBtn.addEventListener('click', () => this.hide(false));
+                this.okBtn.addEventListener('click', () => this.hide(true));
+                this.overlay.addEventListener('click', (e) => {
+                    if (e.target === this.overlay) {
+                        this.hide(false);
+                    }
+                });
+                
+                // ESC 键关闭
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.overlay.style.display === 'flex') {
+                        this.hide(false);
+                    }
+                });
+            }
+            
+            show(options = {}) {
+                const {
+                    title = '确认操作',
+                    message = '确定要执行此操作吗？',
+                    type = 'warning', // warning, error, info, success
+                    confirmText = '确定',
+                    cancelText = '取消',
+                    confirmButtonType = 'confirm' // confirm, danger
+                } = options;
+                
+                // 设置图标
+                let icon = '';
+                switch (type) {
+                    case 'warning': icon = '<span class="confirm-icon confirm-warning">⚠️</span>'; break;
+                    case 'error': icon = '<span class="confirm-icon confirm-error">❌</span>'; break;
+                    case 'info': icon = '<span class="confirm-icon confirm-info">ℹ️</span>'; break;
+                    case 'success': icon = '<span class="confirm-icon confirm-success">✅</span>'; break;
+                }
+                
+                this.title.innerHTML = icon + title;
+                this.body.innerHTML = message.replace(/\n/g, '<br>');
+                this.cancelBtn.textContent = cancelText;
+                this.okBtn.textContent = confirmText;
+                
+                // 设置确认按钮类型
+                this.okBtn.className = `confirm-btn ${confirmButtonType}`;
+                
+                this.overlay.style.display = 'flex';
+                
+                return new Promise((resolve) => {
+                    this.currentResolve = resolve;
+                });
+            }
+            
+            hide(confirmed) {
+                this.overlay.style.display = 'none';
+                if (this.currentResolve) {
+                    this.currentResolve(confirmed);
+                    this.currentResolve = null;
+                }
+            }
+        }
+        
+        // 创建全局确认对话框实例
+        window.customConfirm = new ConfirmDialog();
+        
+        // 替换全局 confirm 函数
+        window.originalConfirm = window.confirm;
+        window.confirm = function(message, options = {}) {
+            return window.customConfirm.show({
+                message: message,
+                type: options.type || 'warning',
+                confirmText: options.confirmText || '确定',
+                cancelText: options.cancelText || '取消',
+                confirmButtonType: options.confirmButtonType || 'confirm'
+            });
+        };
     </script>
 </body>
 </html>

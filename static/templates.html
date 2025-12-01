@@ -9,8 +9,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
         .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .header h1 { font-size: 24px; margin-bottom: 10px; }
-        .header-btn { padding: 8px 16px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .header-btn:hover { background: #40a9ff; }
+        .header-btn { padding: 8px 16px; border: 1px solid #d9d9d9; background: #fff; color: #333; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .header-btn:hover { background: #f0f0f0; border-color: #1890ff; color: #1890ff; }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab { padding: 10px 20px; background: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 14px; }
         .tab.active { background: #1890ff; color: white; }
@@ -19,19 +19,105 @@
         textarea { width: 100%; height: 400px; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; padding: 12px; border: 1px solid #d9d9d9; border-radius: 4px; resize: vertical; }
         .btn-group { margin-top: 15px; display: flex; gap: 10px; }
         .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .btn.primary { background: #1890ff; color: white; }
-        .btn.primary:hover { background: #40a9ff; }
-        .btn.success { background: #52c41a; color: white; }
-        .btn.success:hover { background: #73d13d; }
-        .btn.warning { background: #faad14; color: white; }
-        .btn.warning:hover { background: #ffc53d; }
+        .btn-primary { background: #1890ff; color: white; border-color: #1890ff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-success { background: #52c41a; color: white; border-color: #52c41a; }
+        .btn-success:hover { background: #73d13d; }
+        .btn-warning { background: #faad14; color: white; border-color: #faad14; }
+        .btn-warning:hover { background: #ffc53d; }
         .help-text { font-size: 12px; color: #8c8c8c; margin-top: 8px; }
+        
+        /* 定制化确认对话框 */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-dialog {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: confirmFadeIn 0.2s ease-out;
+        }
+        @keyframes confirmFadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .confirm-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .confirm-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        .confirm-body {
+            padding: 20px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .confirm-footer {
+            padding: 10px 20px 20px 20px;
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .confirm-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            color: #333;
+        }
+        .confirm-btn:hover {
+            background: #f0f0f0;
+        }
+        .confirm-btn.confirm {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        .confirm-btn.confirm:hover {
+            background: #40a9ff;
+        }
+        .confirm-btn.danger {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+        .confirm-btn.danger:hover {
+            background: #ff7875;
+        }
+        .confirm-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .confirm-warning { color: #faad14; }
+        .confirm-error { color: #ff4d4f; }
+        .confirm-info { color: #1890ff; }
+        .confirm-success { color: #52c41a; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📝 模板管理</h1>
-        <a href="/" class="header-btn">返回首页</a>
+        <a href="/" class="header-btn">← 返回首页</a>
     </div>
 
     <div class="tabs">
@@ -48,9 +134,9 @@
         </div>
 
         <div class="btn-group">
-            <button class="btn primary" onclick="saveTemplate()">💾 保存模板</button>
-            <button class="btn success" onclick="downloadTemplate()">📥 下载模板</button>
-            <button class="btn warning" onclick="resetTemplate()">🔄 重置为默认</button>
+            <button class="btn btn-primary" onclick="saveTemplate()">💾 保存模板</button>
+            <button class="btn btn-success" onclick="downloadTemplate()">📥 下载模板</button>
+            <button class="btn btn-warning" onclick="resetTemplate()">🔄 重置为默认</button>
         </div>
     </div>
 
@@ -101,7 +187,12 @@
         }
 
         async function resetTemplate() {
-            if (!confirm('确定重置为默认模板？当前修改将丢失！')) return;
+            if (!await confirm('确定重置为默认模板？当前修改将丢失！', { 
+                type: 'warning', 
+                confirmButtonType: 'danger',
+                confirmText: '重置',
+                title: '重置模板'
+            })) return;
             try {
                 const res = await fetch(`/api/templates/${currentType}/reset`, { method: 'POST' });
                 if (res.ok) {
@@ -130,6 +221,112 @@
 
         // 初始加载
         loadTemplate();
+    </script>
+
+    <!-- 定制化确认对话框 -->
+    <div id="confirmOverlay" class="confirm-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-header">
+                <h4 class="confirm-title" id="confirmTitle">确认操作</h4>
+            </div>
+            <div class="confirm-body" id="confirmBody">
+                确定要执行此操作吗？
+            </div>
+            <div class="confirm-footer">
+                <button class="confirm-btn" id="confirmCancel">取消</button>
+                <button class="confirm-btn confirm" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定制化确认对话框
+        class ConfirmDialog {
+            constructor() {
+                this.overlay = document.getElementById('confirmOverlay');
+                this.title = document.getElementById('confirmTitle');
+                this.body = document.getElementById('confirmBody');
+                this.cancelBtn = document.getElementById('confirmCancel');
+                this.okBtn = document.getElementById('confirmOk');
+                this.currentResolve = null;
+                
+                this.initEvents();
+            }
+            
+            initEvents() {
+                this.cancelBtn.addEventListener('click', () => this.hide(false));
+                this.okBtn.addEventListener('click', () => this.hide(true));
+                this.overlay.addEventListener('click', (e) => {
+                    if (e.target === this.overlay) {
+                        this.hide(false);
+                    }
+                });
+                
+                // ESC 键关闭
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.overlay.style.display === 'flex') {
+                        this.hide(false);
+                    }
+                });
+            }
+            
+            show(options = {}) {
+                const {
+                    title = '确认操作',
+                    message = '确定要执行此操作吗？',
+                    type = 'warning', // warning, error, info, success
+                    confirmText = '确定',
+                    cancelText = '取消',
+                    confirmButtonType = 'confirm' // confirm, danger
+                } = options;
+                
+                // 设置图标
+                let icon = '';
+                switch (type) {
+                    case 'warning': icon = '<span class="confirm-icon confirm-warning">⚠️</span>'; break;
+                    case 'error': icon = '<span class="confirm-icon confirm-error">❌</span>'; break;
+                    case 'info': icon = '<span class="confirm-icon confirm-info">ℹ️</span>'; break;
+                    case 'success': icon = '<span class="confirm-icon confirm-success">✅</span>'; break;
+                }
+                
+                this.title.innerHTML = icon + title;
+                this.body.innerHTML = message.replace(/\n/g, '<br>');
+                this.cancelBtn.textContent = cancelText;
+                this.okBtn.textContent = confirmText;
+                
+                // 设置确认按钮类型
+                this.okBtn.className = `confirm-btn ${confirmButtonType}`;
+                
+                this.overlay.style.display = 'flex';
+                
+                return new Promise((resolve) => {
+                    this.currentResolve = resolve;
+                });
+            }
+            
+            hide(confirmed) {
+                this.overlay.style.display = 'none';
+                if (this.currentResolve) {
+                    this.currentResolve(confirmed);
+                    this.currentResolve = null;
+                }
+            }
+        }
+        
+        // 创建全局确认对话框实例
+        window.customConfirm = new ConfirmDialog();
+        
+        // 替换全局 confirm 函数
+        window.originalConfirm = window.confirm;
+        window.confirm = function(message, options = {}) {
+            return window.customConfirm.show({
+                message: message,
+                type: options.type || 'warning',
+                confirmText: options.confirmText || '确定',
+                cancelText: options.cancelText || '取消',
+                confirmButtonType: options.confirmButtonType || 'confirm'
+            });
+        };
     </script>
 </body>
 </html>

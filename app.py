@@ -934,7 +934,8 @@ def api_script_logs(script_id: int, lines: int = 100):
     script = get_script_by_id(script_id)
     if not script:
         return JSONResponse(status_code=404, content={"error": "not found"})
-    name, _ = os.path.splitext(script['filename'])
+    # 提取脚本基本名称（去除路径和扩展名）
+    name, _ = os.path.splitext(os.path.basename(script['filename']))
     logs = read_script_logs(name, lines)
     files = list_script_log_files(name)
     return {"logs": logs, "files": files}

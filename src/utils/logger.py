@@ -41,9 +41,22 @@ def get_gateway_logger():
 
 # 读取脚本日志
 def read_script_logs(script_name: str, lines: int = 100):
+    """
+    读取脚本日志，支持带路径的脚本名称
+    
+    Args:
+        script_name: 脚本名称，可能包含路径（如 'SenseVoiceSmall/transcribe_tool'）
+        lines: 读取的行数
+    
+    Returns:
+        str: 日志内容
+    """
     logs = []
     date = datetime.now().strftime('%Y-%m-%d')
-    log_file = os.path.join(Config.SCRIPT_LOGS_DIR, f"{script_name}_{date}.log")
+    
+    # 提取脚本基本名称（去除路径）
+    base_name = os.path.basename(script_name)
+    log_file = os.path.join(Config.SCRIPT_LOGS_DIR, f"{base_name}_{date}.log")
     
     if os.path.isfile(log_file):
         with open(log_file, 'r', encoding='utf-8') as f:
@@ -70,9 +83,21 @@ def read_gateway_logs(date: str = None, lines: int = 100):
 
 # 列出脚本日志文件
 def list_script_log_files(script_name: str):
+    """
+    列出脚本日志文件，支持带路径的脚本名称
+    
+    Args:
+        script_name: 脚本名称，可能包含路径（如 'SenseVoiceSmall/transcribe_tool'）
+    
+    Returns:
+        list: 日志文件列表
+    """
     files = []
+    # 提取脚本基本名称（去除路径）
+    base_name = os.path.basename(script_name)
+    
     for fname in os.listdir(Config.SCRIPT_LOGS_DIR):
-        if fname.startswith(f"{script_name}_") and fname.endswith('.log'):
+        if fname.startswith(f"{base_name}_") and fname.endswith('.log'):
             path = os.path.join(Config.SCRIPT_LOGS_DIR, fname)
             size = os.path.getsize(path)
             mtime = os.path.getmtime(path)

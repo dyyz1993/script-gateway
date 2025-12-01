@@ -35,6 +35,11 @@ from src.core.error_handler import (
     create_binary_response,
     print_json_response
 )
+from src.utils.logger import get_script_logger
+
+# 获取日志记录器
+script_name = os.path.splitext(os.path.basename(__file__))[0]
+logger = get_script_logger(script_name)
 
 # =============================================================================
 # 参数定义区域
@@ -149,6 +154,7 @@ def validate_custom_parameters(params: Dict[str, Any]) -> tuple[bool, Optional[D
     # 示例4: 验证输入文件是否存在
     input_file = params.get('input_file')
     if input_file and not os.path.exists(input_file):
+        logger.warning(f"输入文件不存在: {input_file}")
         return False, ValidationError(
             message="输入文件不存在",
             parameter="input_file",
@@ -162,7 +168,9 @@ def validate_custom_parameters(params: Dict[str, Any]) -> tuple[bool, Optional[D
         if not output_path.exists():
             try:
                 output_path.mkdir(parents=True, exist_ok=True)
+                logger.info(f"创建输出目录: {output_dir}")
             except Exception as e:
+                logger.error(f"创建输出目录失败: {str(e)}")
                 return False, ValidationError(
                     message=f"无法创建输出目录: {str(e)}",
                     parameter="output_dir",
@@ -276,18 +284,22 @@ def generate_output_file(params: Dict[str, Any], result_data: Dict[str, Any]) ->
     if format_type == 'json':
         output_file = os.path.join(output_dir, 'result.json')
         try:
+            logger.info(f"正在生成JSON文件: {output_file}")
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(result_data, f, ensure_ascii=False, indent=2)
+            logger.info(f"JSON文件生成成功: {output_file}")
             return output_file
         except Exception as e:
+            logger.error(f"生成JSON文件失败: {str(e)}")
             if params.get('debug', False):
-                print(f"生成JSON文件失败: {str(e)}", file=sys.stderr)
+                logger.exception("生成JSON文件异常详情")
             return None
     
     # 示例2: 生成CSV文件
     elif format_type == 'csv':
         output_file = os.path.join(output_dir, 'result.csv')
         try:
+            logger.info(f"正在生成CSV文件: {output_file}")
             user_info = result_data.get('user_info', {})
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write("name,age,email\n")
@@ -296,10 +308,12 @@ def generate_output_file(params: Dict[str, Any], result_data: Dict[str, Any]) ->
                     user_info.get('age', ''),
                     user_info.get('email', '')
                 ))
+            logger.info(f"CSV文件生成成功: {output_file}")
             return output_file
         except Exception as e:
+            logger.error(f"生成CSV文件失败: {str(e)}")
             if params.get('debug', False):
-                print(f"生成CSV文件失败: {str(e)}", file=sys.stderr)
+                logger.exception("生成CSV文件异常详情")
             return None
     
     return None
@@ -321,26 +335,35 @@ def process_request(params: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dict: 处理结果，可能是成功响应、错误响应或文件响应
     """
+    # 记录脚本开始执行
+    logger.info(f"开始执行脚本，参数: {json.dumps(params, ensure_ascii=False)}")
+    
     # 1. 标准参数验证
     is_valid, error_result = validate_parameters(params, ARGS_MAP)
     if not is_valid:
+        logger.error(f"参数验证失败: {error_result.get('message', '未知错误')}")
         return error_result
     
     # 2. 自定义参数验证
     is_valid, error_result = validate_custom_parameters(params)
     if not is_valid:
+        logger.error(f"自定义参数验证失败: {error_result.get('message', '未知错误')}")
         return error_result
     
     # 3. 处理业务逻辑
     try:
+        logger.info("开始处理业务逻辑")
         result_data = process_business_logic(params)
+        logger.info("业务逻辑处理完成")
     except Exception as e:
+        error_msg = f"处理业务逻辑时发生错误: {str(e)}"
+        logger.error(error_msg)
+        
         if params.get('debug', False):
-            print(f"业务逻辑处理失败: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            logger.exception("业务逻辑处理异常详情")
         
         return ResourceError(
-            message=f"处理业务逻辑时发生错误: {str(e)}",
+            message=error_msg,
             resource_type="business_logic"
         ).to_dict()
     
@@ -350,6 +373,7 @@ def process_request(params: Dict[str, Any]) -> Dict[str, Any]:
     # 5. 根据不同情况返回不同类型的响应
     if output_file:
         # 如果生成了文件，返回文件响应
+        logger.info(f"处理成功，结果已保存到文件: {output_file}")
         return create_file_response(
             data=result_data,
             file_path=output_file,
@@ -357,6 +381,7 @@ def process_request(params: Dict[str, Any]) -> Dict[str, Any]:
         )
     else:
         # 否则返回标准成功响应
+        logger.info("处理成功")
         return create_success_response(
             data=result_data,
             message="处理成功"

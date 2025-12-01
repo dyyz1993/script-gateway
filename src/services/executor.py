@@ -20,6 +20,11 @@ running_processes = {}  # {script_id: (process, script_name)}
 
 
 def build_cli_args(args_schema: Dict[str, Any], http_params: Dict[str, Any]) -> Tuple[list, Dict[str, Any]]:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"DEBUG: args_schema keys = {list(args_schema.keys())}")
+    logger.info(f"DEBUG: http_params keys = {list(http_params.keys())}")
+    
     cli = []
     effective = {}
     for name, meta in args_schema.items():
@@ -27,8 +32,10 @@ def build_cli_args(args_schema: Dict[str, Any], http_params: Dict[str, Any]) -> 
         typ = meta.get('type', 'str')
         required = meta.get('required', False)
         val = http_params.get(name)
+        logger.info(f"DEBUG: processing param {name}, type={typ}, required={required}, val={val}")
         if val is None:
             if required:
+                logger.error(f"DEBUG: missing required param: {name}")
                 raise ValueError(f"missing required param: {name}")
             else:
                 continue
@@ -41,7 +48,12 @@ def build_cli_args(args_schema: Dict[str, Any], http_params: Dict[str, Any]) -> 
             if isinstance(val, str):
                 val = val.lower() in ['true', '1', 'yes']
             val = 1 if val else 0
-        # file/json handled by caller
+        elif typ == 'file':
+            # 文件类型，直接使用路径
+            pass
+        elif typ == 'json':
+            # JSON类型，直接使用值
+            pass
         cli.extend([flag, str(val)])
         effective[name] = val
     return cli, effective

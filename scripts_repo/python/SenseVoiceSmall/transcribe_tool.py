@@ -54,6 +54,11 @@ from src.core.error_handler import (
     create_file_response,
     print_json_response
 )
+from src.utils.logger import get_script_logger
+
+# 初始化日志器
+script_name = os.path.splitext(os.path.basename(__file__))[0]
+logger = get_script_logger(script_name)
 
 # 尝试导入SenseVoice相关依赖
 try:
@@ -127,7 +132,10 @@ def get_schema():
 
 def validate_audio_file(audio_path):
     """验证音频文件是否存在且格式支持"""
+    logger.debug(f"验证音频文件: {os.path.basename(audio_path)}")
+    
     if not os.path.exists(audio_path):
+        logger.error(f"音频文件不存在: {audio_path}")
         return False, ResourceError(
             message=f"音频文件不存在: {audio_path}",
             resource_type="file",
@@ -138,12 +146,14 @@ def validate_audio_file(audio_path):
     file_ext = Path(audio_path).suffix.lower()
     
     if file_ext not in supported_formats:
+        logger.error(f"不支持的音频格式: {file_ext}")
         return False, ValidationError(
             message=f"不支持的音频格式: {file_ext}，支持的格式: {', '.join(supported_formats)}",
             parameter="audio",
             value=audio_path
         ).to_dict()
     
+    logger.debug(f"音频文件验证通过: {file_ext}")
     return True, None
 
 
@@ -151,8 +161,12 @@ def validate_audio_file(audio_path):
 def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp=False, device="cpu"):
     """使用SenseVoice进行音频转录"""
     
+    logger.info(f"开始SenseVoice音频转录: {os.path.basename(audio_path)}")
+    logger.info(f"转录参数: 语言={language}, ITN={use_itn}, 时间戳={output_timestamp}, 设备={device}")
+    
     # 检查依赖是否可用
     if not FUNASR_AVAILABLE:
+        logger.error(f"缺少必要依赖: {IMPORT_ERROR}")
         return ScriptError(
             message=f"缺少必要依赖: {IMPORT_ERROR}",
             error_type=ErrorType.RESOURCE,
@@ -180,6 +194,7 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
     try:
         # 初始化模型
         model_dir = "iic/SenseVoiceSmall"
+        logger.info(f"开始初始化SenseVoice模型: {model_dir}")
         
         # 尝试不同的初始化方式
         try:
@@ -191,7 +206,9 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
                 vad_kwargs={"max_single_segment_time": 30000},
                 device=device,
             )
+            logger.debug("模型初始化成功（方式1：使用remote_code）")
         except Exception as e:
+            logger.debug(f"模型初始化方式1失败，尝试方式2: {str(e)}")
             try:
                 model = AutoModel(
                     model=model_dir,
@@ -199,7 +216,9 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
                     vad_kwargs={"max_single_segment_time": 30000},
                     device=device,
                 )
+                logger.debug("模型初始化成功（方式2：不使用remote_code）")
             except Exception as e2:
+                logger.error(f"模型初始化失败: {str(e2)}")
                 return ScriptError(
                     message=f"模型初始化失败: {str(e2)}",
                     error_type=ErrorType.RESOURCE,
@@ -364,9 +383,12 @@ def transcribe_audio(audio_path, language="auto", use_itn=True, output_timestamp
 @handle_script_errors
 def process_transcription_request(params):
     """处理转录请求"""
+    logger.info("开始处理转录请求")
+    
     # 验证参数
     is_valid, error_result = validate_parameters(params, ARGS_MAP)
     if not is_valid:
+        logger.error(f"参数验证失败: {error_result.get('error', '未知错误')}")
         return error_result
     
     # 获取参数
@@ -377,21 +399,28 @@ def process_transcription_request(params):
     output_file = params.get('output_file', None)
     device = params.get('device', 'cpu')
     
+    # 记录请求参数（不包含敏感的音频文件路径）
+    logger.debug(f"转录参数 - 语言: {language}, 使用ITN: {use_itn}, 输出时间戳: {output_timestamp}, 设备: {device}")
+    
     # 验证音频文件
     is_valid, error_result = validate_audio_file(audio_path)
     if not is_valid:
+        logger.error(f"音频文件验证失败: {error_result.get('error', '未知错误')}")
         return error_result
     
+    logger.info("开始执行音频转录")
     # 执行转录
     result = transcribe_audio(audio_path, language, use_itn, output_timestamp, device)
     
     # 只有明确指定输出文件路径时才生成文件
     if result.get("success") and output_file:
+        logger.info(f"将转录结果写入文件: {os.path.basename(output_file)}")
         try:
             # 确保输出目录存在
             output_dir = os.path.dirname(output_file)
             if output_dir and not os.path.exists(output_dir):
                 os.makedirs(output_dir, exist_ok=True)
+                logger.debug(f"创建输出目录: {output_dir}")
             
             # 写入文件
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -409,15 +438,26 @@ def process_transcription_request(params):
             result["metadata"]["output_file"] = output_file
             result["metadata"]["output_file_size"] = os.path.getsize(output_file)
             
+            logger.debug(f"结果文件写入成功，大小: {result['metadata']['output_file_size']} 字节")
+            
         except Exception as e:
             # 文件写入失败不影响主流程
-            print(f"警告: 结果文件写入失败: {e}")
+            logger.warning(f"结果文件写入失败: {e}")
+    
+    # 记录转录完成状态
+    if result.get("success"):
+        text_length = len(result.get("text", ""))
+        logger.info(f"转录完成，文本长度: {text_length} 字符")
+    else:
+        logger.error(f"转录失败: {result.get('error', '未知错误')}")
     
     return result
 
 
 def main():
     """主函数"""
+    # logger.info("SenseVoice转录工具启动")
+    
     parser = argparse.ArgumentParser(description="SenseVoice音频转录工具")
     
     for key, cfg in ARGS_MAP.items():
@@ -440,6 +480,7 @@ def main():
             parser.add_argument(cfg["flag"], **arg_kwargs)
 
     if len(sys.argv) > 1 and sys.argv[1] == "--_sys_get_schema":
+        logger.debug("获取脚本模式定义")
         print(get_schema())
         sys.exit(0)
 
@@ -451,6 +492,8 @@ def main():
         value = getattr(args, key, None)
         if value is not None:
             params[key] = value
+    
+    logger.debug(f"解析到参数: {len(params)} 个")
     
     # 开始捕获输出，避免库的输出干扰JSON结果
     output_capture.start_capture()
@@ -464,6 +507,7 @@ def main():
         
         # 输出结果
         if result.get("success"):
+            logger.info("转录请求处理成功")
             # 如果有文本内容，直接输出文本
             if "text" in result and result["text"]:
                 # 输出JSON格式，这样executor.py会将其作为JSON处理而不是二进制文件
@@ -482,12 +526,14 @@ def main():
                     }
                     print(json.dumps(json_output, ensure_ascii=False))
                 else:
+                    logger.debug("转录结果为空")
                     json_output = {
                         "text": "转录结果为空",
                         "metadata": result.get("metadata", {})
                     }
                     print(json.dumps(json_output, ensure_ascii=False))
         else:
+            logger.error(f"转录请求处理失败: {result.get('error', '未知错误')}")
             # 输出错误信息为JSON格式
             json_output = {
                 "error": result.get('error', '未知错误'),
@@ -499,6 +545,7 @@ def main():
         # 停止捕获输出
         captured_output = output_capture.stop_capture()
         
+        logger.error(f"脚本执行异常: {str(e)}")
         # 输出错误信息为JSON格式
         json_output = {
             "error": f"脚本执行出错: {str(e)}",

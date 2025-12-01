@@ -256,9 +256,43 @@ def create_file_response(file_path: str, metadata: Dict[str, Any] = None) -> Dic
         ).to_dict()
 
 
+def create_content_response(content: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+    """创建内容响应"""
+    try:
+        response = {
+            "success": True,
+            "type": "content",
+            "content": content,
+            "size": len(content.encode('utf-8'))
+        }
+        
+        if metadata:
+            response["metadata"] = metadata
+        
+        return response
+    except Exception as e:
+        return ScriptError(
+            message=f"处理内容响应时出错: {str(e)}",
+            error_type=ErrorType.SYSTEM
+        ).to_dict()
+
+
 def convert_to_url(file_path: str) -> str:
     """将文件路径转换为URL"""
-    from config import Config
+    try:
+        from src.core.config import Config
+    except ImportError:
+        # 如果无法导入Config，使用简单的相对路径
+        try:
+            # 尝试获取相对于项目根目录的路径
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            abs_path = os.path.abspath(file_path)
+            if abs_path.startswith(project_root):
+                rel_path = os.path.relpath(abs_path, project_root)
+                return f"/files/{rel_path.replace(os.sep, '/')}"
+            return f"/files/{os.path.basename(file_path)}"
+        except:
+            return f"/files/{os.path.basename(file_path)}"
     
     try:
         # 获取相对于BASE_DIR的路径
@@ -266,7 +300,8 @@ def convert_to_url(file_path: str) -> str:
         base_dir = os.path.abspath(Config.BASE_DIR)
         
         if not abs_path.startswith(base_dir):
-            raise ValueError(f"文件路径不在项目目录内: {file_path}")
+            # 如果文件不在项目目录内，使用文件名作为URL
+            return f"/files/{os.path.basename(file_path)}"
         
         rel_path = os.path.relpath(abs_path, base_dir)
         url = "/" + rel_path.replace(os.sep, "/")
