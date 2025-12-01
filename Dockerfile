@@ -69,16 +69,16 @@ RUN npm install --production && \
     rm -rf /root/.npm
 
 # ========== 7. 复制代码 + 创建目录 ==========
-COPY src/ app.py scripts_repo/ static/ templates/ ./
+COPY . .
 
 RUN mkdir -p \
     /app/scripts_repo/python \
     /app/scripts_repo/js \
-    /app/static \
     /app/templates \
     /app/logs/script \
     /app/logs/gateway \
     /app/tmp \
+    /app/.deps_cache \
     /tmp/funasr_cache \
     /root/.cache/modelscope \
     /root/.cache/huggingface
