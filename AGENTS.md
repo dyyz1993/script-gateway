@@ -21,6 +21,11 @@ This file provides guidance to neovate when working with code in this repository
 - **Database location**: `./gateway.db` (SQLite)
 - **Settings management**: Via `/api/settings` endpoints
 
+### Testing Commands
+- No dedicated test framework configured - manual testing via web interface or API calls
+- **API testing**: Use `/scripts-swagger.html` for interactive API testing
+- **Script testing**: Execute scripts via `/api/scripts/{script_id}/run` endpoints
+
 ## Code Architecture & Patterns
 
 ### Project Structure Philosophy
@@ -56,6 +61,11 @@ ScriptGateway is a script-to-API gateway that automatically converts Python and 
 - **ARGS_MAP**: Standardized parameter schema format used across both Python and JavaScript scripts
 - **Sidecar files**: `.{script_name}._map.json` files store extracted schemas alongside scripts
 - **Script lifecycle**: Discovery → Registration → Execution → Logging → Cleanup
+- **Temp file management**: Centralized via `temp_file_service` with automatic cleanup
+- **File access control**: Pattern-based restrictions via `FileAccessChecker`
+- **Error handling**: Structured error types via `ScriptError` and `ErrorType` enums
+- **Dependency isolation**: Per-script dependency management with caching
+- **Environment management**: Dynamic execution environment setup per script
 
 ## Technology Stack & Dependencies
 
@@ -71,16 +81,27 @@ ScriptGateway is a script-to-API gateway that automatically converts Python and 
 - **HTTP client**: `requests`
 - **Scheduling**: `schedule`
 - **Async support**: `anyio`, `sniffio`
+- **ML/ASR dependencies**: `funasr>=1.0.0`, `modelscope>=1.15.0`, `numpy>=1.21.0`, `onnxruntime>=1.15.0`, `jieba>=0.42.1`
 
 ### Node.js Dependencies (package.json)
 - **HTTP client**: `axios@^1.13.2`
 - **Browser automation**: `puppeteer-core@^24.31.0`
+- **QR code generation**: `qrcode@^1.5.4`
 - **Utilities**: `uuid@^9.0.1`
 
 ### Special Tooling
-- **Dual runtime container**: `nikolaik/python-nodejs:python3.11-nodejs20` image
-- **Mirror sources**: Configured to use Tsinghua PyPI and npmmirror for Chinese users
-- **Pre-installed common packages**: qrcode, numpy, pandas, playwright, etc.
+- **Docker base image**: `python:3.11-slim-bookworm` with ARM64 native compatibility
+- **Mirror sources**: Tsinghua PyPI and npmmirror for Chinese users
+- **Pre-installed packages**: qrcode[pil], numpy>=1.23.0, pandas>=2.0.0, openpyxl, python-dateutil, pytz, beautifulsoup4, lxml, pyyaml, redis, pymysql, psycopg2-binary, jieba>=0.42.1
+- **Torch support**: torch==2.3.1, torchaudio==2.3.1 (CPU-only, ARM64 compatible)
+
+### Script-Level Dependency Management
+- **Individual dependencies**: Each script can have its own `requirements.txt` or `package.json`
+- **Cache system**: `.deps_cache/` directory stores dependency caches by hash
+- **Environment isolation**: Python/Node.js paths injected per script execution
+- **Automatic installation**: Dependencies installed on script discovery/execution
+- **API management**: REST endpoints for dependency installation and cache management
+- **Performance**: 75% reduction in build size (2GB → 500MB)
 
 ## Script Development Guidelines
 
@@ -119,6 +140,9 @@ This should return a JSON string defining ARGS_MAP with parameter metadata.
 - **GET**: `/api/scripts/{script_id}/run` (for non-file parameters)
 - **POST**: `/api/scripts/{script_id}/run` (JSON body or multipart for files)
 - **Swagger**: Auto-generated at `/scripts-swagger.html`
+- **Script management**: CRUD operations via `/api/scripts/*` endpoints
+- **Dependency management**: Install/list via `/api/deps/*` endpoints
+- **Settings management**: Get/update via `/api/settings` endpoints
 
 ### Response Format
 ```json
@@ -131,16 +155,93 @@ This should return a JSON string defining ARGS_MAP with parameter metadata.
 }
 ```
 
+### Error Handling
+- **Structured errors**: `ScriptError` with `ErrorType` enum
+- **Custom exception handlers**: Global handlers for script and system errors
+- **Validation errors**: Parameter validation before script execution
+- **Resource errors**: File access, timeout, and memory limit handling
+
 ## Docker Deployment
 
 ### Container Architecture
-- **Base image**: Multi-runtime container with both Python 3.11 and Node.js 20
+- **Base image**: `python:3.11-slim-bookworm` with ARM64 native compatibility
+- **Dual runtime**: Python 3.11 + Node.js 20 (Node.js installed via apt)
 - **Volume mappings**: Scripts, dependencies, database, and logs are persisted outside container
 - **Health checks**: `/health` endpoint monitored every 30 seconds
 - **Port exposure**: 8001 (configurable via docker-compose.yml)
+
+### Build Strategy
+- **Multi-stage optimization**: System dependencies → Python packages → Node.js packages
+- **ARM64 compatibility**: Torch CPU version without +cpu suffix for ARM64 support
+- **Mirror optimization**: Tsinghua PyPI for Python packages, npmmirror for Node.js
+- **Cache management**: Separate layers to optimize rebuild times
 
 ### Production Considerations
 - **Timeout handling**: Scripts are killed after `TIMEOUT_MIN` minutes (default: 10)
 - **Resource isolation**: Each script runs in isolated subprocess
 - **Log rotation**: Automatic cleanup based on retention settings
 - **Dependency persistence**: New installs are written back to requirements.txt/package.json
+
+## Script-Level Dependency Management
+
+### Architecture
+- **Scanner integration**: Automatic dependency detection during script registration
+- **Cache-based installation**: MD5 hash-based caching to avoid redundant installs
+- **Environment isolation**: PYTHONPATH/NODE_PATH injection per script
+- **API endpoints**: RESTful management of script dependencies
+- **Performance optimization**: Shared caches for identical dependency sets
+
+### Directory Structure
+Scripts can declare dependencies in multiple ways:
+```
+scripts_repo/
+├── python/
+│   ├── script.py
+│   ├── requirements.txt          # Script-level dependencies
+│   └── script_group/
+│       ├── main.py
+│       └── requirements.txt      # Group-level dependencies
+├── js/
+│   ├── script.js
+│   ├── package.json             # Script-level dependencies
+│   └── script_group/
+│       ├── main.js
+│       └── package.json         # Group-level dependencies
+```
+
+### Cache Management
+- **Location**: `.deps_cache/python/` and `.deps_cache/nodejs/`
+- **Hash-based**: Dependencies grouped by MD5 hash of content
+- **Shared**: Identical dependency sets share cache
+- **Cleanup**: Automatic cleanup of expired caches (configurable)
+- **API**: Cache status and cleanup endpoints available
+
+### API Endpoints
+- **GET** `/api/scripts/{id}/dependencies` - View script dependencies
+- **POST** `/api/scripts/{id}/dependencies/install` - Install script dependencies
+- **GET** `/api/scripts/{id}/environment` - View script execution environment
+- **POST** `/api/scripts/batch/dependencies/install` - Batch dependency installation
+- **GET** `/api/dependencies/cache/status` - Cache status and statistics
+- **POST** `/api/dependencies/cache/cleanup` - Clean expired caches
+
+## Additional Services & Modules
+
+### Media & File Management
+- **Media middleware**: Handles file uploads with access control
+- **Temporary file service**: Automatic cleanup of upload/processing files
+- **File access checker**: Pattern-based security for local file access
+- **Resource management**: Configurable retention policies and cleanup intervals
+
+### Monitoring & Logging
+- **Rotating logs**: Separate script and gateway log files
+- **Execution tracking**: Database records for all script runs
+- **Health monitoring**: Built-in health checks and metrics
+- **Error tracking**: Structured error logging with types and context
+
+### Configuration Management
+- **Environment-based**: Priority: database > environment variables > defaults
+- **Dynamic updates**: Runtime setting changes via API
+- **Security patterns**: File access restrictions and temp file policies
+- **Global state**: Centralized configuration through `Config` class
+- **File access restrictions**: Configurable via `local_file_access_patterns` setting
+- **Temporary file management**: Automatic cleanup with configurable intervals

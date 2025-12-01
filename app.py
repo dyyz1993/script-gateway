@@ -1,8 +1,17 @@
+import os
+import sys
+
+# 获取当前文件（app.py）所在目录的绝对路径（即 /app）
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# 将项目根目录加入Python搜索路径
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from fastapi import FastAPI, UploadFile, File, Form, Query, Request, Response
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Optional, Dict, Any
-import os
 import json
 import shutil
 import time
@@ -16,6 +25,8 @@ from src.utils.logger import get_gateway_logger, read_script_logs, read_gateway_
 from src.services.cleanup import start_cleanup_scheduler
 from src.api.temp_file_service import temp_file_service
 from src.core.error_handler import ScriptError, ErrorType
+from src.utils.deps import script_deps_manager
+from src.utils.script_env_manager import script_env_manager
 
 app = FastAPI(title="ScriptGateway")
 

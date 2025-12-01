@@ -10,6 +10,7 @@ from typing import Optional
 
 from ..core.config import Config, ensure_dirs
 from ..core.database import upsert_script, init_db, get_setting
+from ..utils.deps import script_deps_manager
 
 STOP_EVENT = Event()
 
@@ -22,25 +23,20 @@ def md5_file(path: str) -> str:
     return h.hexdigest()
 
 
-def run_get_schema(cmd: list[str]) -> tuple[bool, Optional[str], Optional[str]]:
+def run_get_schema(cmd: list):
     try:
-        # 设置环境变量，确保PYTHONPATH包含项目根目录和SenseVoiceSmall路径
+        # 对于schema提取，使用系统环境避免依赖问题
+        # schema提取只需要解析ARGS_MAP，不需要实际导入依赖
         env = os.environ.copy()
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        sensevoice_path = os.path.join(project_root, 'scripts_repo', 'python', 'SenseVoiceSmall')
         
-        # 确保PYTHONPATH包含必要的路径
+        # 确保PYTHONPATH包含项目根目录
         python_path = env.get('PYTHONPATH', '')
-        paths_to_add = [project_root, sensevoice_path]
-        
-        # 将新路径添加到PYTHONPATH
-        for path in paths_to_add:
-            if path not in python_path:
-                if python_path:
-                    python_path += os.pathsep + path
-                else:
-                    python_path = path
-        
+        if project_root not in python_path:
+            if python_path:
+                python_path = project_root + os.pathsep + python_path
+            else:
+                python_path = project_root
         env['PYTHONPATH'] = python_path
         
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
@@ -100,6 +96,15 @@ def parse_and_register(path: str):
     if not has_entrypoint(path, stype):
         return
 
+    # 扫描并安装脚本依赖（静默模式）
+    try:
+        deps_result = script_deps_manager.install_script_dependencies(path)
+        # 如果有依赖安装，记录到日志
+        if any(deps_result['installed'].values()):
+            print(f"[scanner] 为脚本 {relative_path} 安装了依赖: {deps_result['dependencies']}")
+    except Exception as e:
+        print(f"[scanner] 安装脚本依赖失败: {relative_path}, 错误: {e}")
+
     file_hash = md5_file(path)
     cmd = []
     if stype == 'python':
@@ -138,7 +143,7 @@ def parse_and_register(path: str):
     )
 
 
-def should_ignore(path: str, ignore_patterns: list[str]) -> bool:
+def should_ignore(path: str, ignore_patterns: list) -> bool:
     """检查路径是否应该被忽略"""
     # 获取相对路径部分
     path_parts = path.split(os.sep)
@@ -160,7 +165,7 @@ def should_ignore(path: str, ignore_patterns: list[str]) -> bool:
     return False
 
 
-def get_ignore_patterns() -> list[str]:
+def get_ignore_patterns() -> list:
     """从数据库获取忽略模式"""
     patterns_str = get_setting('scan_ignore_patterns')
     if not patterns_str:

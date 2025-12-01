@@ -1,0 +1,1 @@
+{"operation": {"flag": "--operation", "type": "str", "required": true, "help": "操作类型 (add/subtract/multiply/divide)"}, "a": {"flag": "--a", "type": "float", "required": true, "help": "数字A"}, "b": {"flag": "--b", "type": "float", "required": true, "help": "数字B"}}

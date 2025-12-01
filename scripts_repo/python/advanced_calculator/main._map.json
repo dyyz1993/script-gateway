@@ -1,0 +1,1 @@
+{"operation": {"flag": "--operation", "type": "str", "required": true, "help": "操作类型 (sqrt/power/log)"}, "value": {"flag": "--value", "type": "float", "required": true, "help": "数值"}, "power": {"flag": "--power", "type": "float", "required": false, "help": "幂次（用于power操作）", "default": 2.0}}

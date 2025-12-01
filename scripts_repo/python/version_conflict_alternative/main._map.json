@@ -1,0 +1,1 @@
+{"url": {"flag": "--url", "type": "str", "required": true, "help": "要测试的URL"}, "method": {"flag": "--method", "type": "str", "required": false, "help": "HTTP方法", "default": "GET"}}

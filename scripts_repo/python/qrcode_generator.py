@@ -31,8 +31,14 @@ def main():
         box_size = 5
         if size == 'small':
             box_size = 3
+        elif size == 'medium':
+            box_size = 5
         elif size == 'large':
             box_size = 10
+        else:
+            error_result = {"error": f"无效的大小参数: {size}，支持的大小: small, medium, large", "code": 400, "message": "请使用有效的大小参数"}
+            print(json.dumps(error_result, ensure_ascii=False))
+            sys.exit(1)
         
         # 生成二维码
         qr = qrcode.QRCode(

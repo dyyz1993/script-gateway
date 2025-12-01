@@ -1,0 +1,1 @@
+{"message": {"flag": "--message", "type": "str", "required": true, "help": "测试消息"}}

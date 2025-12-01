@@ -1,0 +1,1 @@
+{"image": {"flag": "--image", "type": "file", "required": true, "help": "输入图片文件"}, "operation": {"flag": "--operation", "type": "str", "required": false, "help": "操作类型 (blur/sharpen/grayscale/resize)", "default": "resize"}, "size": {"flag": "--size", "type": "str", "required": false, "help": "调整大小的尺寸 (width,height)", "default": "300,300"}}
