@@ -1,17 +1,8 @@
-import os
-import sys
-
-# 获取当前文件（app.py）所在目录的绝对路径（即 /app）
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-# 将项目根目录加入Python搜索路径
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 from fastapi import FastAPI, UploadFile, File, Form, Query, Request, Response
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Optional, Dict, Any
+import os
 import json
 import shutil
 import time
@@ -25,8 +16,6 @@ from src.utils.logger import get_gateway_logger, read_script_logs, read_gateway_
 from src.services.cleanup import start_cleanup_scheduler
 from src.api.temp_file_service import temp_file_service
 from src.core.error_handler import ScriptError, ErrorType
-from src.utils.deps import script_deps_manager
-from src.utils.script_env_manager import script_env_manager
 
 app = FastAPI(title="ScriptGateway")
 
@@ -1086,6 +1075,196 @@ def api_file_access_set_patterns(patterns: str = Form(...)):
                 "status": "error",
                 "message": f"设置失败: {str(e)}"
             }
+        )
+
+
+
+# ========== 脚本依赖管理 API ==========
+
+@app.get("/api/scripts/{script_id}/dependencies")
+def api_get_script_dependencies(script_id: int):
+    """获取脚本的依赖信息"""
+    script = get_script_by_id(script_id)
+    if not script:
+        return JSONResponse(status_code=404, content={"error": "script not found"})
+    
+    script_path = os.path.join(
+        Config.SCRIPTS_PY_DIR if script['script_type'] == 'python' else Config.SCRIPTS_JS_DIR,
+        script['filename']
+    )
+    
+    if not os.path.exists(script_path):
+        return JSONResponse(status_code=404, content={"error": "script file not found"})
+    
+    try:
+        deps_info = script_deps_manager.scan_script_dependencies(script_path)
+        env_info = script_deps_manager.get_execution_environment(script_path)
+        validation = script_env_manager.validate_dependencies(script_path)
+        
+        return {
+            "script_id": script_id,
+            "script_path": script_path,
+            "dependencies": deps_info,
+            "environment": env_info,
+            "validation": validation
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"获取依赖信息失败: {str(e)}"}
+        )
+
+
+@app.post("/api/scripts/{script_id}/dependencies/install")
+def api_install_script_dependencies(script_id: int, force_reinstall: bool = Form(False)):
+    """安装脚本的依赖"""
+    script = get_script_by_id(script_id)
+    if not script:
+        return JSONResponse(status_code=404, content={"error": "script not found"})
+    
+    script_path = os.path.join(
+        Config.SCRIPTS_PY_DIR if script['script_type'] == 'python' else Config.SCRIPTS_JS_DIR,
+        script['filename']
+    )
+    
+    if not os.path.exists(script_path):
+        return JSONResponse(status_code=404, content={"error": "script file not found"})
+    
+    try:
+        result = script_deps_manager.install_script_dependencies(script_path, force_reinstall)
+        return {
+            "status": "success",
+            "script_id": script_id,
+            "result": result
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"安装依赖失败: {str(e)}"}
+        )
+
+
+@app.get("/api/scripts/{script_id}/environment")
+def api_get_script_environment(script_id: int):
+    """获取脚本的执行环境信息"""
+    script = get_script_by_id(script_id)
+    if not script:
+        return JSONResponse(status_code=404, content={"error": "script not found"})
+    
+    script_path = os.path.join(
+        Config.SCRIPTS_PY_DIR if script['script_type'] == 'python' else Config.SCRIPTS_JS_DIR,
+        script['filename']
+    )
+    
+    if not os.path.exists(script_path):
+        return JSONResponse(status_code=404, content={"error": "script file not found"})
+    
+    try:
+        env_info = script_env_manager.get_script_info(script_path)
+        return {
+            "status": "success",
+            "script_id": script_id,
+            "environment": env_info
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"获取环境信息失败: {str(e)}"}
+        )
+
+
+@app.post("/api/scripts/batch/dependencies/install")
+def api_batch_install_dependencies(payload: Dict[str, Any]):
+    """批量安装脚本依赖"""
+    script_ids = payload.get('script_ids', [])
+    force_reinstall = payload.get('force_reinstall', False)
+    
+    if not script_ids:
+        return JSONResponse(status_code=400, content={"error": "script_ids is required"})
+    
+    script_paths = []
+    for script_id in script_ids:
+        script = get_script_by_id(script_id)
+        if script:
+            script_path = os.path.join(
+                Config.SCRIPTS_PY_DIR if script['script_type'] == 'python' else Config.SCRIPTS_JS_DIR,
+                script['filename']
+            )
+            if os.path.exists(script_path):
+                script_paths.append(script_path)
+    
+    if not script_paths:
+        return JSONResponse(status_code=404, content={"error": "no valid scripts found"})
+    
+    try:
+        result = script_env_manager.batch_install_dependencies(script_paths, force_reinstall)
+        return {
+            "status": "success",
+            "result": result
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"批量安装依赖失败: {str(e)}"}
+        )
+
+
+@app.get("/api/dependencies/cache/status")
+def api_get_cache_status():
+    """获取依赖缓存状态"""
+    try:
+        cache_base = script_deps_manager.cache_base
+        cache_info = {
+            "cache_base": cache_base,
+            "python_cache": os.path.join(cache_base, "python"),
+            "nodejs_cache": os.path.join(cache_base, "nodejs"),
+            "python_cache_count": 0,
+            "nodejs_cache_count": 0,
+            "total_size_mb": 0
+        }
+        
+        # 计算缓存统计
+        for runtime in ['python', 'nodejs']:
+            runtime_dir = os.path.join(cache_base, runtime)
+            if os.path.exists(runtime_dir):
+                for cache_dir in os.listdir(runtime_dir):
+                    cache_path = os.path.join(runtime_dir, cache_dir)
+                    if os.path.isdir(cache_path):
+                        cache_info[f"{runtime}_cache_count"] += 1
+                        # 计算目录大小
+                        dir_size = sum(
+                            os.path.getsize(os.path.join(dirpath, filename))
+                            for dirpath, _, filenames in os.walk(cache_path)
+                            for filename in filenames
+                            if os.path.isfile(os.path.join(dirpath, filename))
+                        )
+                        cache_info["total_size_mb"] += dir_size / (1024 * 1024)
+        
+        return {
+            "status": "success",
+            "cache_info": cache_info
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"获取缓存状态失败: {str(e)}"}
+        )
+
+
+@app.post("/api/dependencies/cache/cleanup")
+def api_cleanup_dependencies_cache(max_age_days: int = Form(30)):
+    """清理过期的依赖缓存"""
+    try:
+        cleaned = script_deps_manager.cleanup_cache(max_age_days)
+        return {
+            "status": "success",
+            "cleaned": cleaned,
+            "message": f"已清理 {cleaned['python'] + cleaned['nodejs']} 个缓存目录，释放 {cleaned['total_size_mb']:.2f} MB 空间"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"清理缓存失败: {str(e)}"}
         )
 
 
